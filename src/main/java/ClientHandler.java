@@ -1,7 +1,4 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 
@@ -40,7 +37,22 @@ public class ClientHandler implements Runnable {
                     }
                 }
                 if (command.equals("download")) {
-
+                    // TODO: 30.10.2020
+                    try {
+                        File file = new File("server/" + in.readUTF());
+                        long length = file.length();
+                        out.writeLong(length);
+                        FileInputStream fis = new FileInputStream(file);
+                        int read;
+                        byte[] buffer = new byte[256];
+                        while ((read = fis.read(buffer)) != -1) {
+                            out.write(buffer, 0, read);
+                        }
+                        out.flush();
+                        out.writeUTF("OK");
+                    } catch (Exception e) {
+                        out.writeUTF("WRONG");
+                    }
                 }
                 if (command.equals("exit")) {
                     System.out.println("Client disconnect corrected");
