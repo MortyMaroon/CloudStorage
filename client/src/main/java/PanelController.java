@@ -1,3 +1,4 @@
+import com.sun.deploy.panel.PropertyTreeModel;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -109,5 +110,16 @@ public class PanelController implements Initializable {
     public void selectDiscAction(ActionEvent actionEvent) {
         ComboBox<String> element = (ComboBox<String>) actionEvent.getSource();
         updateList(Paths.get(element.getSelectionModel().getSelectedItem()));
+    }
+
+    public String getSelectedFilename() {
+        if (filesTable.isFocused()) {
+            return null;
+        }
+        return filesTable.getSelectionModel().getSelectedItem().getFileName();
+    }
+
+    public String getCurrentPath() {
+        return pathField.getText();
     }
 }

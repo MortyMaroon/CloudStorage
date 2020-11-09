@@ -10,4 +10,10 @@
               <Button text="Вверх" onAction="#btnPathUpAction"/>
        </HBox>
        <TableView fx:id="filesTable" VBox.vgrow="ALWAYS" />
+
+       <properties>
+<!--              <controller>-->
+<!--                     <fx:reference source="controller"/>-->
+<!--              </controller>-->
+       </properties>
 </VBox>
