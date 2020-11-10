@@ -10,6 +10,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ResourceBundle;
 
 public class AuthController implements Initializable {
@@ -44,11 +45,10 @@ public class AuthController implements Initializable {
             new Thread(() -> {
                 try {
                     authorization();
-//                    read();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    // TODO: 10.11.2020  
                 } finally {
                     closeConnection();
+                    System.exit(0);
                 }
             }).start();
         } catch (IOException e) {
@@ -74,17 +74,17 @@ public class AuthController implements Initializable {
         }
     }
 
-    private void authorization() throws IOException {
+    private void authorization() {
         while (true) {
-            String str = in.readUTF();
+            String str = readMassage();
             if (str.startsWith("/authOk")) {
-                // TODO: 04.11.2020
+                // TODO: 10.11.2020
                 break;
             }
             if (str.startsWith("/busy")) SignInMessage.setText("This user is online.");
             if (str.startsWith("/noSuch")) SignInMessage.setText("Invalid Login. Please try again.");
             if (str.startsWith("/loginNO")) SignUpMessage.setText("Login is busy.");
-            if (str.startsWith("/nickNO")) SignUpMessage.setText("Nickname is busy.");
+            if (str.startsWith("exitOk")) break;
         }
     }
 
@@ -104,11 +104,12 @@ public class AuthController implements Initializable {
             if (!NewPassword.getText().equals(ConfPassword.getText())) {
                 SignUpMessage.setText("Passwords do not match.");
             } else {
-                sendMassage("/checkLogin" + Login.getText() + " " + Password.getText());
+                sendMassage("/reg " + NewLogin.getText() + " " + NewPassword.getText());
             }
         } else {
             SignUpMessage.setText("Please enter all data.");
         }
+        NewLogin.clear();
         NewPassword.clear();
         ConfPassword.clear();
     }
@@ -131,20 +132,28 @@ public class AuthController implements Initializable {
 
     private void sendMassage(String massage) {
         try {
-            out.writeUTF(massage);
+            out.write(massage.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    private String readMassage() {
+        try {
+            byte[] buffer = new byte[1024];
+            int count = in.read(buffer);
+            return new String(buffer,0,count);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void exit() {
         if (socket != null){
-            try {
-                out.writeUTF("/end");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            sendMassage("exit");
+        } else {
+            System.exit(0);
         }
-        System.exit(0);
     }
 }

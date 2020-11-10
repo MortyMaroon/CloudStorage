@@ -3,7 +3,7 @@ import java.sql.*;
 public class AuthService {
     private static Connection connection;
     private static Statement statement;
-    private static final String DATABASE_NAME = "Server.db";
+    private static final String DATABASE_NAME = "/Server.db";
     private static final String URL = "jdbc:sqlite:Server/" + DATABASE_NAME;
 
     public static void connect() {
