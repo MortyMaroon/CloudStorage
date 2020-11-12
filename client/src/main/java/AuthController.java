@@ -1,16 +1,19 @@
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.ResourceBundle;
 
 public class AuthController implements Initializable {
@@ -45,7 +48,8 @@ public class AuthController implements Initializable {
             new Thread(() -> {
                 try {
                     authorization();
-                    // TODO: 10.11.2020  
+                    // TODO: 10.11.2020
+
                 } finally {
                     closeConnection();
                     System.exit(0);
@@ -155,5 +159,18 @@ public class AuthController implements Initializable {
         } else {
             System.exit(0);
         }
+    }
+
+    private void changeStage() {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/authorization.fxml"));
+            Scene scene = new Scene(root);
+            Stage stage = new Stage();
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }
