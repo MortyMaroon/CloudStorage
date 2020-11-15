@@ -1,3 +1,5 @@
+package handlers;
+
 import java.sql.*;
 
 public class AuthService {
@@ -6,11 +8,15 @@ public class AuthService {
     private static final String DATABASE_NAME = "/Server.db";
     private static final String URL = "jdbc:sqlite:Server/" + DATABASE_NAME;
 
+    public static Statement getStatement() {
+        return statement;
+    }
+
     public static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
             connection = DriverManager.getConnection(URL);
-            statement =connection.createStatement();
+            statement = connection.createStatement();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,3 +1,4 @@
+import handlers.AuthService;
 import handlers.ChatMessageHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -26,7 +27,7 @@ public class Server {
                             channel.pipeline().addLast(
                                     new StringDecoder(),
                                     new StringEncoder(),
-                                    new ChatMessageHandler()
+                                    new ChatMessageHandler(AuthService.getStatement())
                             );
                         }
                     });
