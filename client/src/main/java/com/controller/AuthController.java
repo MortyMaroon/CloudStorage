@@ -1,3 +1,5 @@
+package com.controller;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -49,7 +51,6 @@ public class AuthController implements Initializable {
                 try {
                     authorization();
                     // TODO: 10.11.2020
-
                 } finally {
                     closeConnection();
                     System.exit(0);
@@ -81,12 +82,12 @@ public class AuthController implements Initializable {
     private void authorization() {
         while (true) {
             String str = readMassage();
-            if (str.startsWith("/authOk")) {
+            if (str.startsWith("/auth\nok")) {
                 // TODO: 10.11.2020
                 break;
             }
-            if (str.startsWith("/busy")) SignInMessage.setText("This user is online.");
-            if (str.startsWith("/noSuch")) SignInMessage.setText("Invalid Login. Please try again.");
+            if (str.startsWith("/auth\nbusy")) SignInMessage.setText("This user is online.");
+            if (str.startsWith("/auth\nnoSuch")) SignInMessage.setText("Invalid Login. Please try again.");
             if (str.startsWith("/loginNO")) SignUpMessage.setText("Login is busy.");
             if (str.startsWith("exitOk")) break;
         }

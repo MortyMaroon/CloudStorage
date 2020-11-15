@@ -6,11 +6,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import java.sql.Statement;
 
 public class ChatMessageHandler extends SimpleChannelInboundHandler<String>{
-    private Statement statement;
-
-    public ChatMessageHandler(Statement statement) {
-        this.statement = statement;
-    }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -29,6 +24,7 @@ public class ChatMessageHandler extends SimpleChannelInboundHandler<String>{
         String[] command = s.split(" ");
         if (command[0].equals("/auth")) {
             System.out.println("Client try authorization");
+            Clients.authorization(ctx,s);
 
         }
         if (command[0].equals("/reg")) {

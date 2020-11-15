@@ -1,3 +1,5 @@
+package com.controller;
+
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -21,8 +23,8 @@ public class Controller {
 
 
     public void copyBtnAction(ActionEvent actionEvent) {
-        PanelController client = (PanelController) this.client.getProperties().get("controller");
-        PanelController server = (PanelController) this.server.getProperties().get("controller");
+        PanelController client = (PanelController) this.client.getProperties().get("com/controller");
+        PanelController server = (PanelController) this.server.getProperties().get("com/controller");
         if (client.getSelectedFilename() == null && server.getSelectedFilename() == null) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Ни один файл не был выбран", ButtonType.OK);
             alert.showAndWait();

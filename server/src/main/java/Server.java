@@ -27,7 +27,7 @@ public class Server {
                             channel.pipeline().addLast(
                                     new StringDecoder(),
                                     new StringEncoder(),
-                                    new ChatMessageHandler(AuthService.getStatement())
+                                    new ChatMessageHandler()
                             );
                         }
                     });

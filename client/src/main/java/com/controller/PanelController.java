@@ -1,5 +1,5 @@
-import com.sun.deploy.panel.PropertyTreeModel;
-import javafx.application.Platform;
+package com.controller;
+
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
