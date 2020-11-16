@@ -13,9 +13,16 @@ import javafx.stage.StageStyle;
 public class ClientMain extends Application {
     private Stage stage;
     private static ClientMain instanceClient;
-    private static Network instanceNetwork;
     private double xOffset = 0;
     private double yOffset = 0;
+
+    public static ClientMain getInstance() {
+        return instanceClient;
+    }
+
+    public ClientMain() {
+        instanceClient = this;
+    }
 
     public void toMainScreen() {
         try {
@@ -47,7 +54,7 @@ public class ClientMain extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception{
+    public void start(Stage primaryStage) {
         Scene scene = new Scene(new StackPane());
         stage = primaryStage;
         primaryStage.setScene(scene);
@@ -65,7 +72,7 @@ public class ClientMain extends Application {
     }
 
     public static void main(String[] args) {
-        instanceNetwork = new Network("localhost", 8189);
+        new Network("localhost", 8189);
         launch(args);
     }
 }
