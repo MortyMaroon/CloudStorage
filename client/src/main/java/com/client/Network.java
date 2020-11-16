@@ -13,6 +13,8 @@ public class Network {
     private DataOutputStream out;
 
     public Network(String localhost, int i) {
+        this
+        this.instanceNetwork = this;
     }
 }
 

@@ -19,12 +19,6 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class AuthController implements Initializable {
-    Socket socket;
-    DataInputStream in;
-    DataOutputStream out;
-    final String IP = "localhost";
-    final int PORT = 8189;
-
     @FXML
     private TextField Login, NewLogin;
 
@@ -39,27 +33,26 @@ public class AuthController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        connect();
     }
 
-    private void connect() {
-        try {
-            socket = new Socket(IP, PORT);
-            in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-            new Thread(() -> {
-                try {
-                    authorization();
-                    // TODO: 10.11.2020
-                } finally {
-                    closeConnection();
-                    System.exit(0);
-                }
-            }).start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    private void connect() {
+//        try {
+//            socket = new Socket(IP, PORT);
+//            in = new DataInputStream(socket.getInputStream());
+//            out = new DataOutputStream(socket.getOutputStream());
+//            new Thread(() -> {
+//                try {
+//                    authorization();
+//                    // TODO: 10.11.2020
+//                } finally {
+//                    closeConnection();
+//                    System.exit(0);
+//                }
+//            }).start();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public void closeConnection() {
         try {

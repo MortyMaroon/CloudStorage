@@ -6,6 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -47,22 +48,21 @@ public class ClientMain extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(new StackPane());
         stage = primaryStage;
         primaryStage.setScene(scene);
         primaryStage.initStyle(StageStyle.TRANSPARENT);
-        root.setOnMousePressed((MouseEvent event) -> {
+        scene.setOnMousePressed((MouseEvent event) -> {
             xOffset = event.getSceneX();
             yOffset = event.getSceneY();
         });
-        root.setOnMouseDragged((MouseEvent event) -> {
+        scene.setOnMouseDragged((MouseEvent event) -> {
             primaryStage.setX(event.getScreenX() - xOffset);
             primaryStage.setY(event.getScreenY() - yOffset);
         });
         toAuthorizationScreen();
         primaryStage.show();
     }
-
 
     public static void main(String[] args) {
         instanceNetwork = new Network("localhost", 8189);
