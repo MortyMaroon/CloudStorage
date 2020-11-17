@@ -1,4 +1,4 @@
-package handlers;
+package com.service;
 
 import java.sql.*;
 
@@ -6,7 +6,7 @@ public class AuthService {
     private static Connection connection;
     private static Statement statement;
     private static final String DATABASE_NAME = "StorageServer.db";
-    private static final String URL = "jdbc:sqlite:server/src/main/resources/" + DATABASE_NAME;
+    private static final String URL = "jdbc:sqlite:server/src/com.main/resources/" + DATABASE_NAME;
 
     public static Statement getStatement() {
         return statement;
@@ -49,10 +49,12 @@ public class AuthService {
     }
 
     public static String tryRegister(String login, String password) {
-        String sql = String.format("INSERT INTO users(login, password) VALUES('%s','%s')", login, password);
+        String sql = String.format("INSERT INTO users(login, password, path) VALUES('%s','%s','%s')", login, password, login);
         try {
-            statement.executeQuery(sql);
-            return login;
+            int row = statement.executeUpdate(sql);
+            if (row >= 1) {
+                return login;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

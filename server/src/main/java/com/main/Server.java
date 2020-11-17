@@ -1,5 +1,7 @@
-import handlers.AuthService;
-import handlers.ChatMessageHandler;
+package com.main;
+
+import com.service.AuthService;
+import com.handlers.ChatMessageHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -32,7 +34,7 @@ public class Server {
                         }
                     });
             ChannelFuture future = bootstrap.bind(8189).sync();
-            System.out.println("Server started");
+            System.out.println("com.main.Server started");
             future.channel().closeFuture().sync();
         } catch (Exception e) {
             e.printStackTrace();

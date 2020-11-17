@@ -32,14 +32,11 @@ public class AuthController implements Initializable {
                     Platform.runLater(this::changeMainScreen);
                     break;
                 }
-                if (str.startsWith("/auth\nbusy")) {
-                    SignInMessage.setText("This user is online.");
-                }
                 if (str.startsWith("/auth\nnoSuch")) {
-                    SignInMessage.setText("Invalid Login. Please try again.");
+                    Platform.runLater(this::setLogLabel);
                 }
-                if (str.startsWith("/loginNO")) {
-                    SignUpMessage.setText("Login is busy.");
+                if (str.startsWith("/login\nbusy")) {
+                    Platform.runLater(this::setRegLabel);
                 }
                 if (str.startsWith("exitOk")) {
                     network.closeConnection();
@@ -95,6 +92,14 @@ public class AuthController implements Initializable {
 
     private void changeMainScreen() {
         ClientMain.getInstance().toMainScreen();
+    }
+
+    private void setLogLabel() {
+        SignInMessage.setText("Invalid Login. Please try again.");
+    }
+
+    private void setRegLabel() {
+        SignUpMessage.setText("Login is busy.");
     }
 
     public void exit() {
