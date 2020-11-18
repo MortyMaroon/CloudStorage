@@ -1,28 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox alignment="center" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8" fx:controller="com.controller.Controller">
-    <MenuBar>
-        <Menu text="Файл">
-            <MenuItem text="Выйти из программы"/>
-        </Menu>
-    </MenuBar>
-
-        <HBox VBox.vgrow="ALWAYS">
-            <fx:include fx:id="client" source="panel.fxml" HBox.hgrow="ALWAYS"/>
-            <fx:include fx:id="server" source="panel.fxml" HBox.hgrow="ALWAYS"/>
-        </HBox>
-
-       <HBox spacing="5">
-              <Button maxWidth="Infinity" focusTraversable="false" text="Копироваьб файл" HBox.hgrow="ALWAYS" onAction="#copyBtnAction"/>
-              <Button maxWidth="Infinity" focusTraversable="false" text="Переместить файл" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="Infinity" focusTraversable="false" text="Удалить файл" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="Infinity" focusTraversable="false" text="Выход из программы" HBox.hgrow="ALWAYS" onAction="#btnExitAction"/>
-         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding>
+<VBox alignment="center" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.controller.MainController">
+   <children>
+       <MenuBar>
+          <menus>
+              <Menu text="Файл">
+                 <items>
+                     <MenuItem text="Выйти из программы" />
+                 </items>
+              </Menu>
+          </menus>
+       </MenuBar>
+       <HBox VBox.vgrow="ALWAYS">
+          <children>
+              <VBox HBox.hgrow="ALWAYS">
+                 <children>
+                     <HBox>
+                        <children>
+                            <ComboBox fx:id="disksBox" onAction="#selectDisc" prefHeight="25.0" prefWidth="55.0" />
+                            <Button onAction="#userPathUp" prefHeight="25.0" prefWidth="35.0" text="Up" />
+                            <TextField fx:id="userPathField" editable="false" HBox.hgrow="ALWAYS" />
+                        </children>
+                     </HBox>
+                     <TableView fx:id="clientTable" VBox.vgrow="ALWAYS" />
+                 </children>
+              </VBox>
+              <VBox HBox.hgrow="ALWAYS">
+                 <children>
+                     <HBox>
+                        <children>
+                            <Button onAction="#serverPathUp" prefHeight="25.0" prefWidth="35.0" text="Up" />
+                            <TextField fx:id="serverPathField" editable="false" HBox.hgrow="ALWAYS" />
+                        </children>
+                     </HBox>
+                     <TableView fx:id="serverTable" VBox.vgrow="ALWAYS" />
+                 </children>
+              </VBox>
+          </children>
        </HBox>
+       <HBox spacing="5">
+          <children>
+              <Button focusTraversable="false" maxWidth="Infinity" text="Копироваьб файл" HBox.hgrow="ALWAYS" />
+              <Button focusTraversable="false" maxWidth="Infinity" text="Переместить файл" HBox.hgrow="ALWAYS" />
+              <Button focusTraversable="false" maxWidth="Infinity" text="Удалить файл" HBox.hgrow="ALWAYS" />
+              <Button focusTraversable="false" maxWidth="Infinity" onAction="#btnExitAction" text="Выход из программы" HBox.hgrow="ALWAYS" />
+          </children>
+           <padding>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+           </padding>
+       </HBox>
+   </children>
 </VBox>

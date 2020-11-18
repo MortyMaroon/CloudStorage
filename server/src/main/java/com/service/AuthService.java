@@ -6,12 +6,11 @@ public class AuthService {
     private static Connection connection;
     private static Statement statement;
     private static final String DATABASE_NAME = "StorageServer.db";
-    private static final String URL = "jdbc:sqlite:server/src/com.main/resources/" + DATABASE_NAME;
+    private static final String URL = "jdbc:sqlite:server/src/main/resources/" + DATABASE_NAME;
 
     public static Statement getStatement() {
         return statement;
     }
-
     public static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
