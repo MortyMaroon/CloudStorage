@@ -8,16 +8,15 @@ import java.nio.file.Path;
 
 
 public class Clients {
-    private static final String ROOT_PATH = "server/Storage";
-    private static Path userPath;
+    private final String ROOT_PATH = "server/Storage";
+    private Path userPath;
 
-    public static Path getUserPath() {
+    public Path getUserPath() {
         return userPath;
     }
 
-    public static void authorization(ChannelHandlerContext ctx, String login, String password) {
+    public void authorization(ChannelHandlerContext ctx, String login, String password) {
         String path = AuthService.checkAuthorization(login,password);
-        System.out.println(path);
         if (path != null) {
             userPath = Path.of(ROOT_PATH, path);
             ctx.writeAndFlush("/auth\nok");
@@ -26,7 +25,7 @@ public class Clients {
         }
     }
 
-    public static void registration(ChannelHandlerContext ctx, String login, String password) {
+    public void registration(ChannelHandlerContext ctx, String login, String password) {
         if (AuthService.checkLogin(login) != null) {
             ctx.writeAndFlush("/login\nbusy");
         } else {

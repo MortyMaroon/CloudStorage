@@ -50,7 +50,7 @@ public class AuthController implements Initializable {
 
     public void signIN() {
         if (!Login.getText().isEmpty() && !Password.getText().isEmpty()) {
-            network.sendMassage("/auth " + Login.getText() + " " + Password.getText());
+            network.sendCommand("/auth\n" + Login.getText() + "\n" + Password.getText());
             Login.clear();
             Password.clear();
         } else {
@@ -64,7 +64,7 @@ public class AuthController implements Initializable {
             if (!NewPassword.getText().equals(ConfPassword.getText())) {
                 SignUpMessage.setText("Passwords do not match.");
             } else {
-                network.sendMassage("/reg " + NewLogin.getText() + " " + NewPassword.getText());
+                network.sendCommand("/reg\n" + NewLogin.getText() + "\n" + NewPassword.getText());
             }
         } else {
             SignUpMessage.setText("Please enter all data.");
@@ -104,7 +104,7 @@ public class AuthController implements Initializable {
 
     public void exit() {
         if (network.getStatus()) {
-            network.sendMassage("exit");
+            network.sendCommand("exit");
         } else {
             Platform.exit();
         }

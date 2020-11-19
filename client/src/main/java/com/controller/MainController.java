@@ -36,7 +36,28 @@ public class MainController implements Initializable {
         TableController.makeTable(serverTable);
         setupTableEvents(clientTable);
         setupTableEvents(serverTable);
-        updateUserList(Paths.get("."));
+//        Thread thread = new Thread(() -> {
+//            while (true) {
+//                String str = network.readMassage();
+//                if (str.startsWith("/auth\nok")) {
+//                    Platform.runLater(this::changeMainScreen);
+//                    break;
+//                }
+//                if (str.startsWith("/auth\nnoSuch")) {
+//                    Platform.runLater(this::setLogLabel);
+//                }
+//                if (str.startsWith("/login\nbusy")) {
+//                    Platform.runLater(this::setRegLabel);
+//                }
+//                if (str.startsWith("exitOk")) {
+//                    network.closeConnection();
+//                    Platform.exit();
+//                    break;
+//                }
+//            }
+//        });
+//        thread.start();
+        updateUserList(Paths.get("/"));
         updateServerList();
     }
 

@@ -22,7 +22,7 @@
                  <children>
                      <HBox>
                         <children>
-                            <ComboBox fx:id="disksBox" onAction="#selectDisc" prefHeight="25.0" prefWidth="55.0" />
+                            <ComboBox fx:id="disksBox" onAction="#selectDisc" prefHeight="25.0" prefWidth="67.0" />
                             <Button onAction="#userPathUp" prefHeight="25.0" prefWidth="35.0" text="Up" />
                             <TextField fx:id="userPathField" editable="false" HBox.hgrow="ALWAYS" />
                         </children>

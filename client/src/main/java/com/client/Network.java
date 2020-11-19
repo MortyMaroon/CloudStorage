@@ -1,15 +1,18 @@
 package com.client;
 
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 public class Network {
     private static Network instanceNetwork;
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private ByteBuffer buffer;
 
     public static Network getNetwork() {
         return instanceNetwork;
@@ -28,18 +31,27 @@ public class Network {
 
     public String readMassage() {
         try {
-            byte[] buffer = new byte[1024];
-            int count = in.read(buffer);
-            return new String(buffer,0,count);
+            byte signal = in.readByte();
+            int i = in.readInt();
+            StringBuilder builder = new StringBuilder();
+            for (int j = 0; j < i; j++) {
+                builder.append((char)in.readByte());
+            }
+            return builder.toString();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public void sendMassage(String massage) {
+    public void sendCommand(String command) {
         try {
-            out.write(massage.getBytes());
+            ByteBuffer buffer = ByteBuffer.allocate(1+4+command.length());
+            buffer.put((byte) 20);
+            buffer.putInt(command.length());
+            buffer.put(command.getBytes());
+            out.write(buffer.array());
         } catch (IOException e) {
             e.printStackTrace();
         }

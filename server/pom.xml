@@ -25,6 +25,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>utils</artifactId>
+            <version>1</version>
+            <scope>compile</scope>
+        </dependency>
             <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
         <dependency>
             <groupId>io.netty</groupId>
