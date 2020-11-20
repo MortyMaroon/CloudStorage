@@ -45,7 +45,7 @@ public class MainController implements Initializable {
         setupTableEvents(serverTable);
         Thread thread = new Thread(() -> {
             while (true) {
-                String msg = network.readMassage(getCurrentPath());
+                String msg = network.readMassage();
                 if (msg.startsWith("exit\nOk")) {
                     network.closeConnection();
                     Platform.exit();

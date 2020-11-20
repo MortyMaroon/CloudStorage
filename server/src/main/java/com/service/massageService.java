@@ -16,9 +16,6 @@ import java.nio.file.Path;
 
 public class massageService {
     private ByteBuf buffer;
-    private byte[] filenameBytes;
-    private byte[] userPathByte;
-    private BufferedInputStream fileIn;
 
     public void sendCommand(Channel channel, String command) {
         buffer = ByteBufAllocator.DEFAULT.directBuffer(1 + 4 + command.length());
@@ -29,23 +26,26 @@ public class massageService {
     }
 
     public void upload(Channel channel, Path path , String userPath) throws IOException {
-        fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
-        Long fileSize = Files.size(path);
-        filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
-        userPathByte = userPath.getBytes(StandardCharsets.UTF_8);
-        buffer = ByteBufAllocator.DEFAULT.directBuffer(1 + 4 + userPathByte.length + 4 + filenameBytes.length + 8 + fileSize.intValue());
+        BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
+        long fileSize = Files.size(path);
+        byte[] filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
+        byte[] userPathByte = userPath.getBytes(StandardCharsets.UTF_8);
+
+        buffer = ByteBufAllocator.DEFAULT.directBuffer(1 + 4 + userPathByte.length + 4 + filenameBytes.length + 8 + (int) fileSize);
         buffer.writeByte(Signal.FILE);
         buffer.writeInt(userPath.length());
         buffer.writeBytes(userPathByte);
         buffer.writeInt(path.getFileName().toString().length());
         buffer.writeBytes(filenameBytes);
         buffer.writeLong(Files.size(path));
+
         int read;
         byte[] buf = new byte[256];
         while ((read = fileIn.read(buf)) != -1) {
             buffer.writeBytes(buf,0,read);
         }
         channel.writeAndFlush(buffer);
+
         fileIn.close();
     }
 }

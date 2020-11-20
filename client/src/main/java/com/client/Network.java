@@ -22,7 +22,6 @@ public class Network {
     private int filenameLength = 0;
     private long fileSize = 0L;
 
-
     public static Network getNetwork() {
         return instanceNetwork;
     }
@@ -38,7 +37,7 @@ public class Network {
         }
     }
 
-    public String readMassage(String path) {
+    public String readMassage() {
         try {
             byte signal = in.readByte();
             if (signal == Signal.COMMAND) {
