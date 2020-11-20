@@ -1,5 +1,6 @@
-package com.utils;
+package com.service;
 
+import com.utils.Signal;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
@@ -13,9 +14,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 
-public class FileService {
+public class massageService {
     private ByteBuf buffer;
     private byte[] filenameBytes;
+    private byte[] userPathByte;
     private BufferedInputStream fileIn;
 
     public void sendCommand(Channel channel, String command) {
@@ -26,12 +28,15 @@ public class FileService {
         channel.writeAndFlush(buffer);
     }
 
-    public void upload(Channel channel, Path path) throws IOException {
+    public void upload(Channel channel, Path path , String userPath) throws IOException {
         fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
         Long fileSize = Files.size(path);
         filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
-        buffer = ByteBufAllocator.DEFAULT.directBuffer(1 + 4 + filenameBytes.length + 8 + fileSize.intValue());
+        userPathByte = userPath.getBytes(StandardCharsets.UTF_8);
+        buffer = ByteBufAllocator.DEFAULT.directBuffer(1 + 4 + userPathByte.length + 4 + filenameBytes.length + 8 + fileSize.intValue());
         buffer.writeByte(Signal.FILE);
+        buffer.writeInt(userPath.length());
+        buffer.writeBytes(userPathByte);
         buffer.writeInt(path.getFileName().toString().length());
         buffer.writeBytes(filenameBytes);
         buffer.writeLong(Files.size(path));

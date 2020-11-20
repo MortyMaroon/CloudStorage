@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileService {
+
     public List<FileInfo> makeFileList(String line) {
         List<FileInfo> newList = new ArrayList<>();
         String[] files = line.split("\n");
         for (String file: files) {
             String[] data = file.split(",");
             FileInfo fileInfo = new FileInfo();
-            System.out.println(data[0]);
             fileInfo.setType(data[0].equals(FileType.FILE.toString()) ? FileType.FILE : FileType.DIRECTORY);
             fileInfo.setFileName(data[1]);
             fileInfo.setSize(Long.parseLong(data[2]));

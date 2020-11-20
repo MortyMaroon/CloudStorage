@@ -26,6 +26,7 @@ public class MainController implements Initializable {
     private final Network network = Network.getNetwork();
     private final FileService fileService = new FileService();
 
+
     @FXML
     private ComboBox<String> disksBox;
 
@@ -129,6 +130,7 @@ public class MainController implements Initializable {
                     errorAlert.showAndWait();
                 }
             }
+            updateUserList(Paths.get(getCurrentPath()));
         }
         if (serverTable.isFocused()) {
             String fileName = getSelectedFileName();
@@ -209,7 +211,7 @@ public class MainController implements Initializable {
 
     public void download() {
         if (serverTable.isFocused()) {
-            network.sendCommand("/download\n" + getSelectedFileName());
+            network.sendCommand("/download\n" + getSelectedFileName() + "\n" + getCurrentPath());
         }
     }
 

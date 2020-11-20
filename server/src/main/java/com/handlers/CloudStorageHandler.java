@@ -1,7 +1,7 @@
 package com.handlers;
 
 import com.utils.FileInfo;
-import com.utils.FileService;
+import com.service.massageService;
 import com.utils.Signal;
 import com.utils.State;
 import io.netty.buffer.ByteBuf;
@@ -26,7 +26,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private final Clients user = new Clients();
     private StringBuilder builder;
     private Path userPath;
-    private final FileService fileService = new FileService();
+    private final massageService fileService = new massageService();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
@@ -125,7 +125,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         }
                     case "/download":
                         try {
-                            fileService.upload(ctx.channel(), userPath.resolve(cmd[1]));
+                            fileService.upload(ctx.channel(), userPath.resolve(cmd[1]), cmd[2]);
                             currentState = State.WAIT;
                             break;
                         } catch (IOException exception) {

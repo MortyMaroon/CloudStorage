@@ -16,10 +16,11 @@ public class Network {
     private DataOutputStream out;
     private BufferedInputStream fileIn;
     private BufferedOutputStream fileOut;
+    private byte[] filePathBytes;
     private byte[] filenameBytes;
+    private int filePathLength = 0;
     private int filenameLength = 0;
     private long fileSize = 0L;
-    private long beRead = 0L;
 
 
     public static Network getNetwork() {
@@ -49,22 +50,37 @@ public class Network {
                 return builder.toString();
             }
             if (signal == Signal.FILE) {
-                beRead = 0L;
                 fileSize = 0L;
+
+                System.out.println("Читаем длинну пути в место сохранения");
+                filePathLength = in.readInt();
+                System.out.println("Длинну пути в место сохранения равна: " + filePathLength);
+
+                System.out.println("Читаем пути в место сохранения");
+                filePathBytes = new byte[filePathLength];
+                in.read(filePathBytes, 0, filePathLength);
+                String userPath = new String(filePathBytes, StandardCharsets.UTF_8);
+                System.out.println("Путь в место сохранения: " + userPath);
+
                 System.out.println("Читаем длинну имени файла");
                 filenameLength = in.readInt();
                 System.out.println("Длинна имени файла равна: " + filenameLength);
+
                 System.out.println("Читаем имя файла");
                 filenameBytes = new byte[filenameLength];
                 in.read(filenameBytes, 0 , filenameLength);
                 String filename = new String(filenameBytes, StandardCharsets.UTF_8);
                 System.out.println("Имя файла: " + filename);
-                System.out.println(path);
-                File downloadFile = new File(path + File.separator + filename);
+
+                System.out.println("Настраиваем канал для записи файла");
+                File downloadFile = new File(userPath + File.separator + filename);
                 fileOut = new BufferedOutputStream(new FileOutputStream(downloadFile));
+
                 System.out.println("Читаем длинну файла");
                 fileSize = in.readLong();
                 System.out.println("Длинна файла: " + fileSize);
+
+                System.out.println("Читаем файл");
                 byte[] buf = new byte[256];
                 for (int i = 0; i < (fileSize + 255) / 256; i++) {
                     int read = in.read(buf);
@@ -72,6 +88,7 @@ public class Network {
                 }
                 fileOut.flush();
                 fileOut.close();
+                System.out.println("Файл прочитан");
                 return "/updateUserList";
             }
         } catch (IOException e) {
