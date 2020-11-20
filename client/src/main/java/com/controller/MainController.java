@@ -69,6 +69,11 @@ public class MainController implements Initializable {
                     Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
                     alert.setTitle(msg.split("\n")[1]);
                     alert.showAndWait();
+                } else if (msg.startsWith("/disconnect\nOk")) {
+                    Platform.runLater(() -> {
+                        ClientMain.getInstance().toAuthorizationScreen();
+                    });
+                    break;
                 }
             }
         });
@@ -216,7 +221,7 @@ public class MainController implements Initializable {
     }
 
     public void toAuthMenu() {
-        ClientMain.getInstance().toAuthorizationScreen();
+        network.sendCommand("/disconnect");
     }
 
     public void info() {

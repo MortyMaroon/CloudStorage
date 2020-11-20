@@ -133,24 +133,32 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                             currentState = State.WAIT;
                             break;
                         }
-
+                    case "/disconnect":
+                        userPath = null;
+                        fileService.sendCommand(ctx.channel(), "/disconnect\nOk");
+                        currentState = State.WAIT;
+                        break;
                 }
             }
 
             if (currentState == State.FILE) {
                 beRead = 0L;
                 fileSize = 0L;
+
                 System.out.println("Читаем длинну имени файла");
                 filenameLength = byteBuf.readInt();
                 System.out.println("Длинна имени файла равна: " + filenameLength);
+
                 System.out.println("Читаем имя файла");
                 byte[] filenameInBytes = new byte[filenameLength];
                 byteBuf.readBytes(filenameInBytes);
                 String filename = new String(filenameInBytes, StandardCharsets.UTF_8);
                 System.out.println("Имя файла: " + filename);
+
                 System.out.println(userPath.toString());
                 File downloadFile = new File(userPath.toString() + File.separator + filename);
                 outFile = new BufferedOutputStream(new FileOutputStream(downloadFile));
+
                 System.out.println("Читаем длинну файла");
                 fileSize = byteBuf.readLong();
                 System.out.println("Длинна файла: " + fileSize);
@@ -163,6 +171,8 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                     beRead++;
                     if (beRead == fileSize) {
                         System.out.println("Файл прочитан");
+                        outFile.flush();
+                        outFile.close();
                         currentState = State.UPDATE_FILE_LIST;
                     }
                 }
