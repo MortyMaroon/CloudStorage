@@ -1,6 +1,6 @@
 package com.handlers;
 
-import com.service.AuthService;
+import com.utils.FileInfo;
 import com.utils.FileService;
 import com.utils.Signal;
 import com.utils.State;
@@ -12,6 +12,8 @@ import com.service.Clients;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
     private State currentState = State.WAIT;
@@ -22,8 +24,7 @@ public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
     private Clients user = new Clients();
     private StringBuilder builder;
     private Path userPath;
-    private FileService fileService = new FileService();
-
+    private final FileService fileService = new FileService();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
@@ -43,34 +44,27 @@ public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
                 byte readByte = byteBuf.readByte();
                 if (readByte == Signal.COMMAND) {
                     currentState = State.COMMAND;
-                    System.out.println("прилетел сигнальный байт");
                 } else if (readByte == Signal.FILE) {
-//                    currentState =
-                    System.out.println("начало загрузки");
                 } else {
                     currentState = State.WAIT;
-                    System.out.println("Неизвестная команда");
                 }
             }
 
             if (currentState == State.COMMAND) {
                 if (byteBuf.readableBytes() >= 4) {
-                    System.out.println("читаем длину команды");
                     commandLength = byteBuf.readInt();
-                    System.out.println("длинна команды: " + commandLength);
                     currentState = State.COMMAND_READ;
                 }
             }
 
             if (currentState == State.COMMAND_READ) {
                 builder = new StringBuilder();
-                System.out.println("читаем команду по символам: ");
                 while (byteBuf.readableBytes() > 0 && commandLength != 0) {
                     char symbol = (char) byteBuf.readByte();
-                    System.out.print(symbol);
                     builder.append(symbol);
                     commandLength--;
                 }
+                System.out.println();
                 currentState = State.COMMAND_DOING;
             }
 
@@ -78,43 +72,74 @@ public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
                 String[] cmd = builder.toString().split("\n");
                 switch (cmd[0]) {
                     case "/auth":
-                        System.out.println();
-                        System.out.println("Client try authorization");
-                        String path = AuthService.checkAuthorization(cmd[1],cmd[2]);
+                        Path path = user.authorization(cmd[1],cmd[2]);
                         if (path != null) {
-                            userPath = Path.of("server/Storage", path);
+                            userPath = path;
                             fileService.sendCommand(ctx.channel(), "/auth\nok");
-                            System.out.println("клиент авторизировался");
                         } else {
-                            ctx.channel().writeAndFlush("/auth\nnoSuch".getBytes());
+                            fileService.sendCommand(ctx.channel(), "/auth\nnoSuch");
                         }
                         currentState = State.WAIT;
                         break;
                     case "/reg":
-                        System.out.println("Client try registration");
-                        if (AuthService.checkLogin(cmd[1]) != null) {
-                            ctx.writeAndFlush("/login\nbusy");
-                        } else {
-                            String currentPath = AuthService.tryRegister(cmd[1], cmd[2]);
-                            System.out.println(currentPath);
-                            Path newPath = Path.of("server/Storage", currentPath);
-                            if (!Files.exists(newPath)) {
-                                try {
-                                    Files.createDirectory(newPath);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
+                        Path newPath = user.registration(cmd[1],cmd[2]);
+                        if (newPath != null) {
                             userPath = newPath;
-                            ctx.writeAndFlush("/auth\nok");
+                            fileService.sendCommand(ctx.channel(), "/auth\nok");
+                        } else {
+                            fileService.sendCommand(ctx.channel(), "/login\nbusy");
                         }
                         currentState = State.WAIT;
                         break;
                     case "exit":
-                        ctx.writeAndFlush("exitOk");
+                        fileService.sendCommand(ctx.channel(), "exit\nOk");
                         ctx.close();
                         break;
+                    case "/updateFileList":
+                        currentState = State.UPDATE_FILE_LIST;
+                        break;
+                    case "/enterToDirectory":
+                        userPath = userPath.resolve(cmd[1]);
+                        currentState = State.UPDATE_FILE_LIST;
+                        break;
+                    case "/upDirectory":
+                        if (userPath.getParent().toString().equals(user.getROOT_PATH())){
+                            currentState = State.WAIT;
+                        } else {
+                            userPath = userPath.getParent();
+                            currentState = State.UPDATE_FILE_LIST;
+                        }
+                        break;
+                    case "/delete":
+                        try {
+                            Files.delete(userPath.resolve(cmd[1]));
+                            currentState = State.UPDATE_FILE_LIST;
+                            break;
+                        } catch (IOException exception) {
+                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
+                            currentState = State.WAIT;
+                            break;
+                        }
+                    case "/download":
+
+
                 }
+            }
+
+            if (currentState == State.UPDATE_FILE_LIST) {
+                builder = new StringBuilder();
+                List<FileInfo> serverList = Files.list(userPath)
+                        .map(FileInfo::new)
+                        .collect(Collectors.toList());
+                for (FileInfo fileInfo: serverList) {
+                    builder.append(String.format("%s,%s,%d,%s\n",
+                            fileInfo.getType(),
+                            fileInfo.getFileName(),
+                            fileInfo.getSize(),
+                            fileInfo.getLastModified()));
+                }
+                fileService.sendCommand(ctx.channel(), "/fileList\n" + builder.toString());
+                currentState = State.WAIT;
             }
         }
     }

@@ -9,9 +9,11 @@
    <children>
        <MenuBar>
           <menus>
-              <Menu text="Файл">
+              <Menu text="Menu">
                  <items>
-                     <MenuItem text="Выйти из программы" />
+                     <MenuItem text="Exit" onAction="#Exit"/>
+                     <MenuItem text="Change user" onAction="#toAuthMenu"/>
+                     <MenuItem text="Info" onAction="#info"/>
                  </items>
               </Menu>
           </menus>
@@ -45,10 +47,8 @@
        </HBox>
        <HBox spacing="5">
           <children>
-              <Button focusTraversable="false" maxWidth="Infinity" text="Копироваьб файл" HBox.hgrow="ALWAYS" />
-              <Button focusTraversable="false" maxWidth="Infinity" text="Переместить файл" HBox.hgrow="ALWAYS" />
-              <Button focusTraversable="false" maxWidth="Infinity" text="Удалить файл" HBox.hgrow="ALWAYS" />
-              <Button focusTraversable="false" maxWidth="Infinity" onAction="#btnExitAction" text="Выход из программы" HBox.hgrow="ALWAYS" />
+              <Button onAction="#upload" focusTraversable="false" maxWidth="Infinity" text="Upload to the cloud" HBox.hgrow="ALWAYS" />
+              <Button onAction="#download" focusTraversable="false" maxWidth="Infinity" prefHeight="25.0" prefWidth="118.0" text="Download to your computer" HBox.hgrow="ALWAYS" />
           </children>
            <padding>
                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

@@ -1,5 +1,6 @@
 package com.controller;
 
+import com.utils.FileInfo;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.*;

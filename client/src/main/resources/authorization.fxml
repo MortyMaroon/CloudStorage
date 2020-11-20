@@ -43,6 +43,13 @@
       </StackPane>
    </center>
    <left>
-      <Pane prefHeight="400.0" prefWidth="300.0" style="-fx-background-color: linear-gradient(to right top, #743157, #67355d, #583860, #4a3b61, #3d3c5e, #36496f, #27587f, #00668b, #0088a1, #00a895, #00c36a, #a0d625);" styleClass="#051937 #210537 #A8EB12" BorderPane.alignment="CENTER" />
+      <Pane prefHeight="400.0" prefWidth="300.0" style="-fx-background-color: linear-gradient(to right top, #743157, #67355d, #583860, #4a3b61, #3d3c5e, #36496f, #27587f, #00668b, #0088a1, #00a895, #00c36a, #a0d625);" styleClass="#051937 #210537 #A8EB12" BorderPane.alignment="CENTER">
+         <children>
+            <Text layoutX="38.0" layoutY="166.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome to my Cloud Storage" wrappingWidth="224.28125">
+               <font>
+                  <Font size="32.0" />
+               </font>
+            </Text>
+         </children></Pane>
    </left>
 </BorderPane>

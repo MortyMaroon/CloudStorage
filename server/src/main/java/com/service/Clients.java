@@ -1,7 +1,5 @@
 package com.service;
 
-import io.netty.channel.ChannelHandlerContext;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,38 +7,35 @@ import java.nio.file.Path;
 
 public class Clients {
     private final String ROOT_PATH = "server/Storage";
-    private Path userPath;
 
-    public Path getUserPath() {
-        return userPath;
+    public String getROOT_PATH() {
+        return ROOT_PATH;
     }
 
-    public void authorization(ChannelHandlerContext ctx, String login, String password) {
+    public Path authorization(String login, String password) {
         String path = AuthService.checkAuthorization(login,password);
         if (path != null) {
-            userPath = Path.of(ROOT_PATH, path);
-            ctx.writeAndFlush("/auth\nok");
+            return Path.of(ROOT_PATH, path);
         } else {
-            ctx.writeAndFlush("/auth\nnoSuch");
+            return null;
         }
     }
 
-    public void registration(ChannelHandlerContext ctx, String login, String password) {
+    public Path registration(String login, String password) {
         if (AuthService.checkLogin(login) != null) {
-            ctx.writeAndFlush("/login\nbusy");
+            return null;
         } else {
-            String currentPath = AuthService.tryRegister(login, password);
-            System.out.println(currentPath);
-            Path newPath = Path.of(ROOT_PATH, currentPath);
+            Path newPath = Path.of(ROOT_PATH, AuthService.tryRegister(login, password));
             if (!Files.exists(newPath)) {
                 try {
-                    Files.createDirectory(newPath);
+                    if (!Files.exists(newPath)) {
+                        Files.createDirectory(newPath);
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            userPath = newPath;
-            ctx.writeAndFlush("/auth\nok");
+            return newPath;
         }
     }
 }

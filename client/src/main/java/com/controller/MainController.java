@@ -1,12 +1,17 @@
 package com.controller;
 
+import com.client.FileService;
 import com.client.Network;
+import com.main.ClientMain;
+import com.utils.FileInfo;
+import com.utils.FileType;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 
 import java.io.IOException;
@@ -14,11 +19,14 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 public class MainController implements Initializable {
-    private Network network = Network.getNetwork();
+    private final Network network = Network.getNetwork();
+    private final FileService fileService = new FileService();
 
     @FXML
     private ComboBox<String> disksBox;
@@ -36,40 +44,54 @@ public class MainController implements Initializable {
         TableController.makeTable(serverTable);
         setupTableEvents(clientTable);
         setupTableEvents(serverTable);
-//        Thread thread = new Thread(() -> {
-//            while (true) {
-//                String str = network.readMassage();
-//                if (str.startsWith("/auth\nok")) {
-//                    Platform.runLater(this::changeMainScreen);
-//                    break;
-//                }
-//                if (str.startsWith("/auth\nnoSuch")) {
-//                    Platform.runLater(this::setLogLabel);
-//                }
-//                if (str.startsWith("/login\nbusy")) {
-//                    Platform.runLater(this::setRegLabel);
-//                }
-//                if (str.startsWith("exitOk")) {
-//                    network.closeConnection();
-//                    Platform.exit();
-//                    break;
-//                }
-//            }
-//        });
-//        thread.start();
+        Thread thread = new Thread(() -> {
+            while (true) {
+                String msg = network.readMassage();
+                if (msg.startsWith("exit\nOk")) {
+                    network.closeConnection();
+                    Platform.exit();
+                    break;
+                } else if (msg.startsWith("/updateUserList")) {
+                    updateUserList(Paths.get(getCurrentPath()));
+                } else if (msg.startsWith("/fileList")){
+                    if (msg.split("\n").length > 1) {
+                        List<FileInfo> serverList = fileService.makeFileList(msg.split("\n", 2)[1]);
+                        Platform.runLater(() -> {
+                            serverTable.getItems().clear();
+                            serverList.forEach(element -> serverTable.getItems().add(element));
+                            serverTable.sort();
+                        });
+                    }else {
+                        Platform.runLater(() -> {
+                            serverTable.getItems().clear();
+                        });
+                    }
+                } else if (msg.startsWith("/error")) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
+                    alert.setTitle(msg.split("\n")[1]);
+                    alert.showAndWait();
+                }
+            }
+        });
+        thread.start();
         updateUserList(Paths.get("/"));
         updateServerList();
     }
 
     private void setupTableEvents(TableView<FileInfo> tableView) {
-        tableView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                if (event.getClickCount() == 2) {
-                    if (tableView.getSelectionModel().getSelectedItem().getType() == FileInfo.FileType.DIRECTORY) {
-                        enter();
-                    }
+        tableView.setOnMouseClicked(event ->  {
+            if (event.getClickCount() == 2) {
+                if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.DIRECTORY) {
+                    enter();
                 }
+            }
+        });
+        tableView.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                enter();
+            }
+            if (event.getCode() == KeyCode.DELETE) {
+                delete();
             }
         });
     }
@@ -85,6 +107,42 @@ public class MainController implements Initializable {
                 updateUserList(path);
             }
         }
+        if (serverTable.isFocused()) {
+            network.sendCommand("/enterToDirectory\n" + getSelectedFileName());
+        }
+    }
+
+    private void delete() {
+        if (clientTable.isFocused()) {
+            Path deletedFile = getSelectedFile();
+            Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            deleteAlert.setTitle("Delete");
+            deleteAlert.setContentText("Are you sure you want to delete this file?");
+            Optional<ButtonType> option = deleteAlert.showAndWait();
+            if (option.isPresent() && option.get() == ButtonType.OK) {
+                try {
+                    fileService.delete(deletedFile);
+                } catch (IOException exception) {
+                    Alert errorAlert = new Alert(Alert.AlertType.ERROR, exception.getMessage(), ButtonType.OK);
+                    errorAlert.setTitle(exception.getClass().getSimpleName());
+                    errorAlert.showAndWait();
+                }
+            }
+        }
+        if (serverTable.isFocused()) {
+            String fileName = getSelectedFileName();
+            Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            deleteAlert.setTitle("Delete");
+            deleteAlert.setContentText("Are you sure you want to delete this file?");
+            Optional<ButtonType> option = deleteAlert.showAndWait();
+            if (option.isPresent() && option.get() == ButtonType.OK) {
+                network.sendCommand("/delete\n" + fileName);
+            }
+        }
+    }
+
+    private Path getSelectedFile() {
+        return Paths.get(getCurrentPath(), getSelectedFileName());
     }
 
     private void updateUserList(Path path) {
@@ -103,7 +161,7 @@ public class MainController implements Initializable {
     }
 
     private void updateServerList() {
-
+        network.sendCommand("/updateFileList\n");
     }
 
     public void selectDisc(ActionEvent actionEvent) {
@@ -111,18 +169,50 @@ public class MainController implements Initializable {
         updateUserList(Paths.get(element.getSelectionModel().getSelectedItem()));
     }
 
-    public void userPathUp(ActionEvent actionEvent) {
+    public void userPathUp() {
         Path upperPath = Paths.get(userPathField.getText()).getParent();
         if (upperPath != null) {
             updateUserList(upperPath);
         }
     }
 
-    public void serverPathUp(ActionEvent actionEvent) {
-
+    private String getSelectedFileName() {
+        if (clientTable.isFocused()) {
+            return clientTable.getSelectionModel().getSelectedItem().getFileName();
+        } else {
+            return serverTable.getSelectionModel().getSelectedItem().getFileName();
+        }
     }
 
-    public void btnExitAction(ActionEvent actionEvent) {
-        Platform.exit();
+    public void serverPathUp() {
+        network.sendCommand("/upDirectory");
+    }
+
+    public void Exit() {
+        network.sendCommand("exit");
+    }
+
+    private String getCurrentPath() {
+        return userPathField.getText();
+    }
+
+    public void upload() {
+    }
+
+    public void download() {
+        if (serverTable.isFocused()) {
+            network.sendCommand("/download\n" + getSelectedFileName());
+        }
+    }
+
+    public void toAuthMenu() {
+        ClientMain.getInstance().toAuthorizationScreen();
+    }
+
+    public void info() {
+        Alert info = new Alert(Alert.AlertType.INFORMATION);
+        info.setTitle("Info");
+        info.setContentText("Here you will find information about the program");
+        info.showAndWait();
     }
 }

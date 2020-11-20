@@ -38,7 +38,7 @@ public class AuthController implements Initializable {
                 if (str.startsWith("/login\nbusy")) {
                     Platform.runLater(this::setRegLabel);
                 }
-                if (str.startsWith("exitOk")) {
+                if (str.startsWith("exit\nOk")) {
                     network.closeConnection();
                     Platform.exit();
                     break;

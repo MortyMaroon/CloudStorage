@@ -12,7 +12,6 @@ public class Network {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
-    private ByteBuffer buffer;
 
     public static Network getNetwork() {
         return instanceNetwork;
@@ -38,7 +37,6 @@ public class Network {
                 builder.append((char)in.readByte());
             }
             return builder.toString();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -76,11 +74,7 @@ public class Network {
     }
 
     public boolean getStatus() {
-        if (socket != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return socket != null;
     }
 }
 

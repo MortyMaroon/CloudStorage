@@ -44,6 +44,8 @@ public class FileInfo {
         this.lastModified = lastModified;
     }
 
+    public FileInfo() {}
+
     public FileInfo(Path path) {
         try {
             this.fileName = path.getFileName().toString();
