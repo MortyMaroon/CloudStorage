@@ -7,12 +7,10 @@ import com.utils.FileInfo;
 import com.utils.FileType;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
 
 import java.io.IOException;
 import java.net.URL;
@@ -46,7 +44,7 @@ public class MainController implements Initializable {
         setupTableEvents(serverTable);
         Thread thread = new Thread(() -> {
             while (true) {
-                String msg = network.readMassage();
+                String msg = network.readMassage(getCurrentPath());
                 if (msg.startsWith("exit\nOk")) {
                     network.closeConnection();
                     Platform.exit();
@@ -84,6 +82,9 @@ public class MainController implements Initializable {
                 if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.DIRECTORY) {
                     enter();
                 }
+            }
+            if (event.isSecondaryButtonDown()) {
+
             }
         });
         tableView.setOnKeyPressed(event -> {
@@ -197,6 +198,13 @@ public class MainController implements Initializable {
     }
 
     public void upload() {
+        if (clientTable.isFocused()) {
+            try {
+                network.sendFile(getSelectedFile(), Files.size(getSelectedFile()));
+            } catch (IOException exception) {
+                exception.printStackTrace();
+            }
+        }
     }
 
     public void download() {

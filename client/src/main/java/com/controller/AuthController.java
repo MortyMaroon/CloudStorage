@@ -27,7 +27,7 @@ public class AuthController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         Thread thread = new Thread(() -> {
             while (true) {
-                String str = network.readMassage();
+                String str = network.readMassage(null);
                 if (str.startsWith("/auth\nok")) {
                     Platform.runLater(this::changeMainScreen);
                     break;

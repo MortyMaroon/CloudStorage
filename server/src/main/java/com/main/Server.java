@@ -1,7 +1,7 @@
 package com.main;
 
 import com.service.AuthService;
-import com.handlers.ChatMessageHandler;
+import com.handlers.CloudStorageHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -25,7 +25,7 @@ public class Server {
                         @Override
                         protected void initChannel(Channel channel) throws Exception {
                             channel.pipeline().addLast(
-                                    new ChatMessageHandler()
+                                    new CloudStorageHandler()
                             );
                         }
                     });

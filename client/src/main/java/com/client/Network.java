@@ -1,17 +1,26 @@
 package com.client;
 
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.utils.Signal;
+
+import java.io.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 public class Network {
     private static Network instanceNetwork;
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private BufferedInputStream fileIn;
+    private BufferedOutputStream fileOut;
+    private byte[] filenameBytes;
+    private int filenameLength = 0;
+    private long fileSize = 0L;
+    private long beRead = 0L;
+
 
     public static Network getNetwork() {
         return instanceNetwork;
@@ -28,15 +37,43 @@ public class Network {
         }
     }
 
-    public String readMassage() {
+    public String readMassage(String path) {
         try {
             byte signal = in.readByte();
-            int i = in.readInt();
-            StringBuilder builder = new StringBuilder();
-            for (int j = 0; j < i; j++) {
-                builder.append((char)in.readByte());
+            if (signal == Signal.COMMAND) {
+                int i = in.readInt();
+                StringBuilder builder = new StringBuilder();
+                for (int j = 0; j < i; j++) {
+                    builder.append((char)in.readByte());
+                }
+                return builder.toString();
             }
-            return builder.toString();
+            if (signal == Signal.FILE) {
+                beRead = 0L;
+                fileSize = 0L;
+                System.out.println("Читаем длинну имени файла");
+                filenameLength = in.readInt();
+                System.out.println("Длинна имени файла равна: " + filenameLength);
+                System.out.println("Читаем имя файла");
+                filenameBytes = new byte[filenameLength];
+                in.read(filenameBytes, 0 , filenameLength);
+                String filename = new String(filenameBytes, StandardCharsets.UTF_8);
+                System.out.println("Имя файла: " + filename);
+                System.out.println(path);
+                File downloadFile = new File(path + File.separator + filename);
+                fileOut = new BufferedOutputStream(new FileOutputStream(downloadFile));
+                System.out.println("Читаем длинну файла");
+                fileSize = in.readLong();
+                System.out.println("Длинна файла: " + fileSize);
+                byte[] buf = new byte[256];
+                for (int i = 0; i < (fileSize + 255) / 256; i++) {
+                    int read = in.read(buf);
+                    fileOut.write(buf,0,read);
+                }
+                fileOut.flush();
+                fileOut.close();
+                return "/updateUserList";
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -53,6 +90,25 @@ public class Network {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendFile(Path path, Long size) throws IOException {
+        fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
+        filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
+        filenameLength = filenameBytes.length;
+        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + filenameBytes.length + 8 + size.intValue());
+        buffer.put(Signal.FILE);
+        buffer.putInt(path.getFileName().toString().length());
+        buffer.put(filenameBytes);
+        buffer.putLong(size);
+        int read;
+        byte[] buf = new byte[256];
+        while ((read = fileIn.read(buf)) != -1) {
+            buffer.put(buf, 0, read);
+        }
+        System.out.println(buffer.array().length);
+        out.write(buffer.array());
+        fileIn.close();
     }
 
     public void closeConnection() {
@@ -76,5 +132,6 @@ public class Network {
     public boolean getStatus() {
         return socket != null;
     }
+
 }
 

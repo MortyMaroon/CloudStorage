@@ -9,19 +9,21 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import com.service.Clients;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
+public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private State currentState = State.WAIT;
     private int commandLength = 0;
     private int filenameLength = 0;
     private long fileSize = 0L;
-    private long receivedFileSize = 0L;
-    private Clients user = new Clients();
+    private long beRead = 0L;
+    private BufferedOutputStream outFile;
+    private final Clients user = new Clients();
     private StringBuilder builder;
     private Path userPath;
     private final FileService fileService = new FileService();
@@ -45,6 +47,7 @@ public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
                 if (readByte == Signal.COMMAND) {
                     currentState = State.COMMAND;
                 } else if (readByte == Signal.FILE) {
+                    currentState = State.FILE;
                 } else {
                     currentState = State.WAIT;
                 }
@@ -121,8 +124,47 @@ public class ChatMessageHandler extends ChannelInboundHandlerAdapter {
                             break;
                         }
                     case "/download":
+                        try {
+                            fileService.upload(ctx.channel(), userPath.resolve(cmd[1]));
+                            currentState = State.WAIT;
+                            break;
+                        } catch (IOException exception) {
+                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
+                            currentState = State.WAIT;
+                            break;
+                        }
 
+                }
+            }
 
+            if (currentState == State.FILE) {
+                beRead = 0L;
+                fileSize = 0L;
+                System.out.println("Читаем длинну имени файла");
+                filenameLength = byteBuf.readInt();
+                System.out.println("Длинна имени файла равна: " + filenameLength);
+                System.out.println("Читаем имя файла");
+                byte[] filenameInBytes = new byte[filenameLength];
+                byteBuf.readBytes(filenameInBytes);
+                String filename = new String(filenameInBytes, StandardCharsets.UTF_8);
+                System.out.println("Имя файла: " + filename);
+                System.out.println(userPath.toString());
+                File downloadFile = new File(userPath.toString() + File.separator + filename);
+                outFile = new BufferedOutputStream(new FileOutputStream(downloadFile));
+                System.out.println("Читаем длинну файла");
+                fileSize = byteBuf.readLong();
+                System.out.println("Длинна файла: " + fileSize);
+                currentState = State.FILE_READ;
+            }
+
+            if (currentState == State.FILE_READ) {
+                while (byteBuf.readableBytes() > 0) {
+                    outFile.write(byteBuf.readByte());
+                    beRead++;
+                    if (beRead == fileSize) {
+                        System.out.println("Файл прочитан");
+                        currentState = State.UPDATE_FILE_LIST;
+                    }
                 }
             }
 
