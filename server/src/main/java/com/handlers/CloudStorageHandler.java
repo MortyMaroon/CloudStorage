@@ -21,7 +21,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private int commandLength = 0;
     private int filenameLength = 0;
     private long fileSize = 0L;
-    private long beRead = 0L;
+    private long wasRead = 0L;
     private BufferedOutputStream outFile;
     private StringBuilder builder;
     private Path userPath;
@@ -30,6 +30,12 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         System.out.println("Client connected");
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        cause.printStackTrace();
+        ctx.close();
     }
 
     @Override
@@ -47,7 +53,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                 if (signalByte == Signal.COMMAND) {
                     currentState = State.COMMAND;
                 } else if (signalByte == Signal.FILE) {
-                    currentState = State.FILE;
+                    currentState = State.FILE_NAME_LENGTH;
                     System.out.println("Start downloading...");
                 } else {
                     currentState = State.WAIT;
@@ -156,67 +162,104 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                             if (directory.exists()) {
                                 throw new Exception("Directory is already exist");
                             } else {
-                                directory.mkdir();
+                                if (!directory.mkdir()) {
+                                    throw new Exception("Failed to create directory");
+                                }
+                            }
+                            currentState = State.UPDATE_FILE_LIST;
+                            break;
+                        } catch (Exception exception) {
+                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                            currentState = State.WAIT;
+                            break;
+                        }
+
+                    case "/rename":
+                        try {
+                            File file = new File(userPath + File.separator + cmd[1]);
+                            File renameFile = new File(userPath + File.separator + cmd[2]);
+                            if (file.renameTo(renameFile)) {
+                                currentState = State.UPDATE_FILE_LIST;
+                                break;
+                            } else {
+                                throw new Exception("Failed to rename file");
                             }
                         } catch (Exception exception) {
                             fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
                             currentState = State.WAIT;
                             break;
                         }
+
+                    default:
+                        currentState = State.WAIT;
+                        throw new IllegalAccessException("Unknown command: " + builder.toString());
                 }
             }
 
-            if (currentState == State.FILE) {
-                beRead = 0L;
+            if (currentState == State.FILE_NAME_LENGTH) {
+                wasRead = 0L;
                 fileSize = 0L;
-
-                System.out.println("Читаем длинну имени файла");
+                System.out.println("Get filename length.");
                 filenameLength = byteBuf.readInt();
-                System.out.println("Длинна имени файла равна: " + filenameLength);
+                currentState = State.FILE_NAME;
+            }
 
-                System.out.println("Читаем имя файла");
+            if (currentState == State.FILE_NAME) {
                 byte[] filenameInBytes = new byte[filenameLength];
                 byteBuf.readBytes(filenameInBytes);
                 String filename = new String(filenameInBytes, StandardCharsets.UTF_8);
-                System.out.println("Имя файла: " + filename);
-
-                System.out.println(userPath.toString());
                 File downloadFile = new File(userPath.toString() + File.separator + filename);
-                outFile = new BufferedOutputStream(new FileOutputStream(downloadFile));
+                System.out.println("Filename received: " + filename);
+                try {
+                    outFile = new BufferedOutputStream(new FileOutputStream(downloadFile));
+                } catch (FileNotFoundException exception) {
+                    fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                    currentState = State.WAIT;
+                    break;
+                }
+                currentState = State.FILE_LENGTH;
+            }
 
-                System.out.println("Читаем длинну файла");
+            if (currentState == State.FILE_LENGTH) {
                 fileSize = byteBuf.readLong();
-                System.out.println("Длинна файла: " + fileSize);
+                System.out.println("File size received: " + fileSize);
                 currentState = State.FILE_READ;
             }
 
             if (currentState == State.FILE_READ) {
                 while (byteBuf.readableBytes() > 0) {
                     outFile.write(byteBuf.readByte());
-                    beRead++;
-                    if (beRead == fileSize) {
-                        System.out.println("Файл прочитан");
+                    wasRead++;
+                    if (wasRead == fileSize) {
                         outFile.flush();
                         outFile.close();
+                        System.out.println("File received");
                         currentState = State.UPDATE_FILE_LIST;
+                        break;
                     }
                 }
             }
 
             if (currentState == State.UPDATE_FILE_LIST) {
-                builder = new StringBuilder();
-                List<FileInfo> serverList = Files.list(userPath)
-                        .map(FileInfo::new)
-                        .collect(Collectors.toList());
-                for (FileInfo fileInfo: serverList) {
-                    builder.append(String.format("%s,%s,%d,%s\n",
-                            fileInfo.getType(),
-                            fileInfo.getFileName(),
-                            fileInfo.getSize(),
-                            fileInfo.getLastModified()));
+                try {
+                    builder = new StringBuilder();
+                    List<FileInfo> serverList = Files.list(userPath)
+                            .map(FileInfo::new)
+                            .collect(Collectors.toList());
+                    for (FileInfo fileInfo: serverList) {
+                        builder.append(String.format("%s,%s,%d,%s\n",
+                                fileInfo.getType(),
+                                fileInfo.getFileName(),
+                                fileInfo.getSize(),
+                                fileInfo.getLastModified()));
+                    }
+                    fileService.sendCommand(ctx.channel(), "/fileList\n" + builder.toString());
+                    currentState = State.WAIT;
+                } catch (IOException exception) {
+                    fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
+                    currentState = State.WAIT;
+                    break;
                 }
-                fileService.sendCommand(ctx.channel(), "/fileList\n" + builder.toString());
-                currentState = State.WAIT;
             }
         }
     }
