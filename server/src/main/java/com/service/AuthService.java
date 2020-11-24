@@ -1,5 +1,8 @@
 package com.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.*;
 
 public class AuthService {
@@ -7,6 +10,7 @@ public class AuthService {
     private static Statement statement;
     private static final String DATABASE_NAME = "StorageServer.db";
     private static final String URL = "jdbc:sqlite:server/src/main/resources/" + DATABASE_NAME;
+    private static final String ROOT_PATH = "server/Storage";
 
     public static void connect() {
         try {
@@ -18,7 +22,38 @@ public class AuthService {
         }
     }
 
-    public static String checkAuthorization(String login, String password) {
+    public static String getRootPath() {
+        return ROOT_PATH;
+    }
+
+    public static Path authorization(String login, String password) {
+        String path = checkAuthorization(login,password);
+        if (path != null) {
+            return Path.of(ROOT_PATH, path);
+        } else {
+            return null;
+        }
+    }
+
+    public static Path registration(String login, String password) {
+        if (checkLogin(login) != null) {
+            return null;
+        } else {
+            Path newPath = Path.of(ROOT_PATH, tryRegister(login, password));
+            if (!Files.exists(newPath)) {
+                try {
+                    if (!Files.exists(newPath)) {
+                        Files.createDirectory(newPath);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return newPath;
+        }
+    }
+
+    private static String checkAuthorization(String login, String password) {
         String sql = String.format("SELECT path FROM users WHERE login = '%s' AND password = '%s'", login, password);
         try {
             ResultSet rs = statement.executeQuery(sql);
@@ -31,7 +66,7 @@ public class AuthService {
         return null;
     }
 
-    public static String checkLogin(String login) {
+    private static String checkLogin(String login) {
         String sql = String.format("SELECT login FROM users WHERE login = '%s'", login);
         try {
             ResultSet rs = statement.executeQuery(sql);
@@ -44,7 +79,7 @@ public class AuthService {
         return null;
     }
 
-    public static String tryRegister(String login, String password) {
+    private static String tryRegister(String login, String password) {
         String sql = String.format("INSERT INTO users(login, password, path) VALUES('%s','%s','%s')", login, password, login);
         try {
             int row = statement.executeUpdate(sql);

@@ -1,5 +1,6 @@
 package com.handlers;
 
+import com.service.AuthService;
 import com.utils.FileInfo;
 import com.service.massageService;
 import com.utils.Signal;
@@ -7,7 +8,6 @@ import com.utils.State;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import com.service.Clients;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +23,6 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private long fileSize = 0L;
     private long beRead = 0L;
     private BufferedOutputStream outFile;
-    private final Clients user = new Clients();
     private StringBuilder builder;
     private Path userPath;
     private final massageService fileService = new massageService();
@@ -75,7 +74,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                 String[] cmd = builder.toString().split("\n");
                 switch (cmd[0]) {
                     case "/auth":
-                        Path path = user.authorization(cmd[1],cmd[2]);
+                        Path path = AuthService.authorization(cmd[1],cmd[2]);
                         if (path != null) {
                             userPath = path;
                             fileService.sendCommand(ctx.channel(), "/auth\nok");
@@ -85,7 +84,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         currentState = State.WAIT;
                         break;
                     case "/reg":
-                        Path newPath = user.registration(cmd[1],cmd[2]);
+                        Path newPath = AuthService.registration(cmd[1],cmd[2]);
                         if (newPath != null) {
                             userPath = newPath;
                             fileService.sendCommand(ctx.channel(), "/auth\nok");
@@ -106,7 +105,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         currentState = State.UPDATE_FILE_LIST;
                         break;
                     case "/upDirectory":
-                        if (userPath.getParent().toString().equals(user.getROOT_PATH())){
+                        if (userPath.getParent().toString().equals(AuthService.getRootPath())){
                             currentState = State.WAIT;
                         } else {
                             userPath = userPath.getParent();

@@ -40,6 +40,4 @@ public class Server {
             AuthService.disconnect();
         }
     }
-
-
 }
