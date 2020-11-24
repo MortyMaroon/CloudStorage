@@ -2,7 +2,7 @@ package com.handlers;
 
 import com.service.AuthService;
 import com.utils.FileInfo;
-import com.service.massageService;
+import com.service.MessageService;
 import com.utils.Signal;
 import com.utils.State;
 import io.netty.buffer.ByteBuf;
@@ -25,7 +25,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private BufferedOutputStream outFile;
     private StringBuilder builder;
     private Path userPath;
-    private final massageService fileService = new massageService();
+    private final MessageService fileService = new MessageService();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
@@ -41,14 +41,17 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf byteBuf = (ByteBuf) msg;
         while (byteBuf.readableBytes() > 0) {
+
             if (currentState == State.WAIT) {
-                byte readByte = byteBuf.readByte();
-                if (readByte == Signal.COMMAND) {
+                byte signalByte = byteBuf.readByte();
+                if (signalByte == Signal.COMMAND) {
                     currentState = State.COMMAND;
-                } else if (readByte == Signal.FILE) {
+                } else if (signalByte == Signal.FILE) {
                     currentState = State.FILE;
+                    System.out.println("Start downloading...");
                 } else {
                     currentState = State.WAIT;
+                    throw new RuntimeException("Unknown byte command: " + signalByte);
                 }
             }
 
@@ -73,6 +76,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
             if (currentState == State.COMMAND_DOING) {
                 String[] cmd = builder.toString().split("\n");
                 switch (cmd[0]) {
+
                     case "/auth":
                         Path path = AuthService.authorization(cmd[1],cmd[2]);
                         if (path != null) {
@@ -83,6 +87,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         }
                         currentState = State.WAIT;
                         break;
+
                     case "/reg":
                         Path newPath = AuthService.registration(cmd[1],cmd[2]);
                         if (newPath != null) {
@@ -93,17 +98,21 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         }
                         currentState = State.WAIT;
                         break;
+
                     case "exit":
                         fileService.sendCommand(ctx.channel(), "exit\nOk");
                         ctx.close();
                         break;
+
                     case "/updateFileList":
                         currentState = State.UPDATE_FILE_LIST;
                         break;
+
                     case "/enterToDirectory":
                         userPath = userPath.resolve(cmd[1]);
                         currentState = State.UPDATE_FILE_LIST;
                         break;
+
                     case "/upDirectory":
                         if (userPath.getParent().toString().equals(AuthService.getRootPath())){
                             currentState = State.WAIT;
@@ -112,6 +121,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                             currentState = State.UPDATE_FILE_LIST;
                         }
                         break;
+
                     case "/delete":
                         try {
                             Files.delete(userPath.resolve(cmd[1]));
@@ -122,9 +132,10 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                             currentState = State.WAIT;
                             break;
                         }
+
                     case "/download":
                         try {
-                            fileService.upload(ctx.channel(), userPath.resolve(cmd[1]), cmd[2]);
+                            fileService.uploadFile(ctx.channel(), userPath.resolve(cmd[1]), cmd[2]);
                             currentState = State.WAIT;
                             break;
                         } catch (IOException exception) {
@@ -132,11 +143,26 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                             currentState = State.WAIT;
                             break;
                         }
+
                     case "/disconnect":
                         userPath = null;
                         fileService.sendCommand(ctx.channel(), "/disconnect\nOk");
                         currentState = State.WAIT;
                         break;
+
+                    case "/mkdir":
+                        try {
+                            File directory = new File(userPath + File.separator + cmd[1]);
+                            if (directory.exists()) {
+                                throw new Exception("Directory is already exist");
+                            } else {
+                                directory.mkdir();
+                            }
+                        } catch (Exception exception) {
+                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                            currentState = State.WAIT;
+                            break;
+                        }
                 }
             }
 

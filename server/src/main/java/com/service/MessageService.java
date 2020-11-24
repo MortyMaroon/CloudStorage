@@ -14,7 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 
-public class massageService {
+public class MessageService {
     private ByteBuf buffer;
 
     public void sendCommand(Channel channel, String command) {
@@ -25,7 +25,7 @@ public class massageService {
         channel.writeAndFlush(buffer);
     }
 
-    public void upload(Channel channel, Path path , String userPath) throws IOException {
+    public void uploadFile(Channel channel, Path path , String userPath) throws IOException {
         BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
         long fileSize = Files.size(path);
         byte[] filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
