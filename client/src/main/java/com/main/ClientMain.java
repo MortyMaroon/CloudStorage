@@ -2,13 +2,18 @@ package com.main;
 
 import com.client.Network;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
+import java.io.IOException;
 
 public class ClientMain extends Application {
     private Stage stage;
@@ -72,7 +77,16 @@ public class ClientMain extends Application {
     }
 
     public static void main(String[] args) {
-        new Network("localhost", 8189);
-        launch(args);
+        try {
+            new Network("localhost", 8189);
+            launch(args);
+        } catch (IOException exception) {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to connect to the server", ButtonType.OK);
+                alert.setTitle(exception.getClass().getSimpleName());
+                alert.showAndWait();
+                Platform.exit();
+            });
+        }
     }
 }

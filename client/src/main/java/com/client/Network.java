@@ -26,15 +26,11 @@ public class Network {
         return instanceNetwork;
     }
 
-    public Network(String ip, int port) {
-        try {
-            instanceNetwork = this;
-            this.socket = new Socket(ip, port);
-            in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+    public Network(String ip, int port) throws IOException {
+        instanceNetwork = this;
+        this.socket = new Socket(ip, port);
+        in = new DataInputStream(socket.getInputStream());
+        out = new DataOutputStream(socket.getOutputStream());
     }
 
     public String readMassage() {
