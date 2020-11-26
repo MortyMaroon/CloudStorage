@@ -1,5 +1,6 @@
 package com.controller;
 
+import com.client.FileService;
 import com.client.Network;
 import com.main.ClientMain;
 import javafx.application.Platform;
@@ -8,11 +9,14 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class AuthController implements Initializable {
     private final Network network = Network.getNetwork();
+    private final FileService fileService = new FileService();
+
     @FXML
     private TextField Login, NewLogin;
     @FXML
@@ -49,9 +53,13 @@ public class AuthController implements Initializable {
 
     public void signIN() {
         if (!Login.getText().isEmpty() && !Password.getText().isEmpty()) {
-            network.sendCommand("/auth\n" + Login.getText() + "\n" + Password.getText());
-            Login.clear();
-            Password.clear();
+            try {
+                fileService.sendCommand(network.getOutputStream(), "/auth\n" + Login.getText() + "\n" + Password.getText());
+                Login.clear();
+                Password.clear();
+            } catch (IOException exception) {
+                createAlert(exception);
+            }
         } else {
             SignInMessage.setText("Please enter login and password.");
         }
@@ -63,7 +71,11 @@ public class AuthController implements Initializable {
             if (!NewPassword.getText().equals(ConfPassword.getText())) {
                 SignUpMessage.setText("Passwords do not match.");
             } else {
-                network.sendCommand("/reg\n" + NewLogin.getText() + "\n" + NewPassword.getText());
+                try {
+                    fileService.sendCommand(network.getOutputStream(), "/reg\n" + NewLogin.getText() + "\n" + NewPassword.getText());
+                } catch (IOException exception) {
+                    createAlert(exception);
+                }
             }
         } else {
             SignUpMessage.setText("Please enter all data.");
@@ -103,9 +115,19 @@ public class AuthController implements Initializable {
 
     public void exit() {
         if (network.getStatus()) {
-            network.sendCommand("exit");
+            try {
+                fileService.sendCommand(network.getOutputStream(), "exit");
+            } catch (IOException exception) {
+                createAlert(exception);
+            }
         } else {
             Platform.exit();
         }
+    }
+
+    private void createAlert(Exception exception) {
+        Alert errorAlert = new Alert(Alert.AlertType.WARNING, exception.getMessage(), ButtonType.OK);
+        errorAlert.setTitle(exception.getClass().getSimpleName());
+        errorAlert.showAndWait();
     }
 }

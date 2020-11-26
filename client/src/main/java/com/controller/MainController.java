@@ -26,7 +26,6 @@ public class MainController implements Initializable {
     private final Network network = Network.getNetwork();
     private final FileService fileService = new FileService();
 
-
     @FXML
     private ComboBox<String> disksBox;
 
@@ -61,18 +60,14 @@ public class MainController implements Initializable {
                             serverTable.sort();
                         });
                     }else {
-                        Platform.runLater(() -> {
-                            serverTable.getItems().clear();
-                        });
+                        Platform.runLater(() -> serverTable.getItems().clear());
                     }
                 } else if (msg.startsWith("/error")) {
                     Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
                     alert.setTitle(msg.split("\n")[1]);
                     alert.showAndWait();
                 } else if (msg.startsWith("/disconnect\nOk")) {
-                    Platform.runLater(() -> {
-                        ClientMain.getInstance().toAuthorizationScreen();
-                    });
+                    Platform.runLater(() -> ClientMain.getInstance().toAuthorizationScreen());
                     break;
                 }
             }
@@ -113,9 +108,12 @@ public class MainController implements Initializable {
             if (Files.isDirectory(path)) {
                 updateUserList(path);
             }
-        }
-        if (serverTable.isFocused()) {
-            fileService.sendCommand(network.getOutputStream() ,"/enterToDirectory\n" + getSelectedFileName());
+        } else {
+            try {
+                fileService.sendCommand(network.getOutputStream() ,"/enterToDirectory\n" + getSelectedFileName());
+            } catch (IOException exception) {
+                createAlert(exception);
+            }
         }
     }
 
@@ -130,21 +128,22 @@ public class MainController implements Initializable {
                 try {
                     fileService.delete(deletedFile);
                 } catch (IOException exception) {
-                    Alert errorAlert = new Alert(Alert.AlertType.ERROR, exception.getMessage(), ButtonType.OK);
-                    errorAlert.setTitle(exception.getClass().getSimpleName());
-                    errorAlert.showAndWait();
+                    createAlert(exception);
                 }
+                updateUserList(Paths.get(getCurrentPath()));
             }
-            updateUserList(Paths.get(getCurrentPath()));
-        }
-        if (serverTable.isFocused()) {
+        } else {
             String fileName = getSelectedFileName();
             Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
             deleteAlert.setTitle("Delete");
             deleteAlert.setContentText("Are you sure you want to delete this file?");
             Optional<ButtonType> option = deleteAlert.showAndWait();
             if (option.isPresent() && option.get() == ButtonType.OK) {
-                network.sendCommand("/delete\n" + fileName);
+                try {
+                    fileService.sendCommand(network.getOutputStream(), "/delete\n" + fileName);
+                } catch (IOException exception) {
+                    createAlert(exception);
+                }
             }
         }
     }
@@ -169,7 +168,11 @@ public class MainController implements Initializable {
     }
 
     private void updateServerList() {
-        network.sendCommand("/updateFileList\n");
+        try {
+            fileService.sendCommand(network.getOutputStream(), "/updateFileList\n");
+        } catch (IOException exception) {
+            createAlert(exception);
+        }
     }
 
     public void selectDisc(ActionEvent actionEvent) {
@@ -193,11 +196,19 @@ public class MainController implements Initializable {
     }
 
     public void serverPathUp() {
-        network.sendCommand("/upDirectory");
+        try {
+            fileService.sendCommand(network.getOutputStream(), "/upDirectory");
+        } catch (IOException exception) {
+            createAlert(exception);
+        }
     }
 
     public void Exit() {
-        network.sendCommand("exit");
+        try {
+            fileService.sendCommand(network.getOutputStream(),"exit");
+        } catch (IOException exception) {
+            createAlert(exception);
+        }
     }
 
     private String getCurrentPath() {
@@ -207,21 +218,29 @@ public class MainController implements Initializable {
     public void upload() {
         if (clientTable.isFocused()) {
             try {
-                network.sendFile(getSelectedFile(), Files.size(getSelectedFile()));
+                fileService.sendFile(network.getOutputStream(), getSelectedFile());
             } catch (IOException exception) {
-                exception.printStackTrace();
+                createAlert(exception);
             }
         }
     }
 
     public void download() {
         if (serverTable.isFocused()) {
-            network.sendCommand("/download\n" + getSelectedFileName() + "\n" + getCurrentPath());
+            try {
+                fileService.sendCommand(network.getOutputStream(), "/download\n" + getSelectedFileName() + "\n" + getCurrentPath());
+            } catch (IOException exception) {
+                createAlert(exception);
+            }
         }
     }
 
     public void toAuthMenu() {
-        network.sendCommand("/disconnect");
+        try {
+            fileService.sendCommand(network.getOutputStream(), "/disconnect");
+        } catch (IOException exception) {
+            createAlert(exception);
+        }
     }
 
     public void info() {
@@ -229,5 +248,11 @@ public class MainController implements Initializable {
         info.setTitle("Info");
         info.setContentText("Here you will find information about the program");
         info.showAndWait();
+    }
+
+    private void createAlert(Exception exception) {
+        Alert errorAlert = new Alert(Alert.AlertType.WARNING, exception.getMessage(), ButtonType.OK);
+        errorAlert.setTitle(exception.getClass().getSimpleName());
+        errorAlert.showAndWait();
     }
 }

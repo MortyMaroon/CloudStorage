@@ -16,14 +16,13 @@ import java.util.List;
 public class FileService {
     private ByteBuffer buffer;
 
-
     public List<FileInfo> makeFileList(String line) {
         List<FileInfo> newList = new ArrayList<>();
         String[] files = line.split("\n");
         for (String file: files) {
             String[] data = file.split(",");
             FileInfo fileInfo = new FileInfo();
-            if (data[0].equals(FileType.FILE)) {
+            if (data[0].equals("FILE")) {
                 fileInfo.setType(FileType.FILE);
             } else {
                 fileInfo.setType(FileType.DIRECTORY);
@@ -42,7 +41,6 @@ public class FileService {
         buffer.putInt(command.length());
         buffer.put(command.getBytes());
         out.write(buffer.array());
-        buffer.clear();
     }
 
     public void sendFile(DataOutputStream out, Path path) throws IOException {
@@ -54,14 +52,11 @@ public class FileService {
         buffer.put(filenameBytes);
         buffer.putLong(Files.size(path));
         out.write(buffer.array());
-        buffer.clear();
         int read;
-        byte[] buf = new byte[256];
-        while ((read = fileIn.read(buf)) != -1) {
-            buffer.put(buf, 0, read);
+        byte[] tempBuf = new byte[1024];
+        while ((read = fileIn.read(tempBuf)) != -1) {
+            out.write(tempBuf, 0, read);
         }
-        out.write(buffer.array());
-        buffer.clear();
         fileIn.close();
     }
 
@@ -74,7 +69,9 @@ public class FileService {
         if (newDirectory.exists()) {
             throw new Exception("The directory is already exists");
         } else {
-            newDirectory.mkdir();
+            if (!newDirectory.mkdir()){
+                throw new Exception("Failed to create directory");
+            }
         }
     }
 }
