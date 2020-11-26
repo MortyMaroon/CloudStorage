@@ -115,7 +115,7 @@ public class MainController implements Initializable {
             }
         }
         if (serverTable.isFocused()) {
-            network.sendCommand("/enterToDirectory\n" + getSelectedFileName());
+            fileService.sendCommand(network.getOutputStream() ,"/enterToDirectory\n" + getSelectedFileName());
         }
     }
 

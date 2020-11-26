@@ -26,6 +26,10 @@ public class Network {
         return instanceNetwork;
     }
 
+    public DataOutputStream getOutputStream() {
+        return out;
+    }
+
     public Network(String ip, int port) throws IOException {
         instanceNetwork = this;
         this.socket = new Socket(ip, port);
@@ -92,36 +96,36 @@ public class Network {
         return null;
     }
 
-    public void sendCommand(String command) {
-        try {
-            ByteBuffer buffer = ByteBuffer.allocate(1+4+command.length());
-            buffer.put((byte) 20);
-            buffer.putInt(command.length());
-            buffer.put(command.getBytes());
-            out.write(buffer.array());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    public void sendCommand(String command) {
+//        try {
+//            ByteBuffer buffer = ByteBuffer.allocate(1+4+command.length());
+//            buffer.put((byte) 20);
+//            buffer.putInt(command.length());
+//            buffer.put(command.getBytes());
+//            out.write(buffer.array());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
-    public void sendFile(Path path, Long size) throws IOException {
-        fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
-        filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
-        filenameLength = filenameBytes.length;
-        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + filenameBytes.length + 8 + size.intValue());
-        buffer.put(Signal.FILE);
-        buffer.putInt(path.getFileName().toString().length());
-        buffer.put(filenameBytes);
-        buffer.putLong(size);
-        int read;
-        byte[] buf = new byte[256];
-        while ((read = fileIn.read(buf)) != -1) {
-            buffer.put(buf, 0, read);
-        }
-        System.out.println(buffer.array().length);
-        out.write(buffer.array());
-        fileIn.close();
-    }
+//    public void sendFile(Path path, Long size) throws IOException {
+//        fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
+//        filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
+//        filenameLength = filenameBytes.length;
+//        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + filenameBytes.length + 8 + size.intValue());
+//        buffer.put(Signal.FILE);
+//        buffer.putInt(path.getFileName().toString().length());
+//        buffer.put(filenameBytes);
+//        buffer.putLong(size);
+//        int read;
+//        byte[] buf = new byte[256];
+//        while ((read = fileIn.read(buf)) != -1) {
+//            buffer.put(buf, 0, read);
+//        }
+//        System.out.println(buffer.array().length);
+//        out.write(buffer.array());
+//        fileIn.close();
+//    }
 
     public void closeConnection() {
         try {
