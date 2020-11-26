@@ -148,6 +148,37 @@ public class MainController implements Initializable {
         }
     }
 
+    private void createNewDirectory() {
+        if (clientTable.isFocused()) {
+            TextInputDialog folderCreatingWindow = new TextInputDialog();
+            folderCreatingWindow.setTitle("Create new folder");
+            folderCreatingWindow.setHeaderText("Enter a name for the new folder");
+            Optional<String> result = folderCreatingWindow.showAndWait();
+            if (result.isPresent()) {
+                try {
+                    fileService.createDirectory(Paths.get(getCurrentPath()), result.get());
+                } catch (Exception exception) {
+                    createAlert(exception);
+                } finally {
+                    updateUserList(Paths.get(getCurrentPath()));
+                }
+            }
+        }
+        if (serverTable.isFocused()) {
+            TextInputDialog folderCreatingWindow = new TextInputDialog();
+            folderCreatingWindow.setTitle("Create new folder");
+            folderCreatingWindow.setHeaderText("Enter a name for the new folder");
+            Optional<String> result = folderCreatingWindow.showAndWait();
+            if (result.isPresent()) {
+                try {
+                    fileService.sendCommand(network.getOutputStream(), "/mkdir\n" + result.get());
+                } catch (IOException exception) {
+                    createAlert(exception);
+                }
+            }
+        }
+    }
+
     private Path getSelectedFile() {
         return Paths.get(getCurrentPath(), getSelectedFileName());
     }
