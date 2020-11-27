@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileService {
-    private ByteBuffer buffer;
-
     public List<FileInfo> makeFileList(String line) {
         List<FileInfo> newList = new ArrayList<>();
         String[] files = line.split("\n");
@@ -35,18 +33,10 @@ public class FileService {
         return newList;
     }
 
-    public void sendCommand(DataOutputStream out, String command) throws IOException {
-        buffer = ByteBuffer.allocate(1+4+command.length());
-        buffer.put(Signal.COMMAND);
-        buffer.putInt(command.length());
-        buffer.put(command.getBytes());
-        out.write(buffer.array());
-    }
-
     public void sendFile(DataOutputStream out, Path path) throws IOException {
         BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(new File(String.valueOf(path))));
         byte[] filenameBytes = path.getFileName().toString().getBytes(StandardCharsets.UTF_8);
-        buffer = ByteBuffer.allocate(1 + 4 + filenameBytes.length + 8);
+        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + filenameBytes.length + 8);
         buffer.put(Signal.FILE);
         buffer.putInt(path.getFileName().toString().length());
         buffer.put(filenameBytes);
@@ -58,6 +48,39 @@ public class FileService {
             out.write(tempBuf, 0, read);
         }
         fileIn.close();
+    }
+
+    public void getFile(DataInputStream inputStream) throws IOException {
+        System.out.println("Get file path length.");
+        int filePathLength = inputStream.readInt();
+
+        byte[] filePathBytes = new byte[filePathLength];
+        inputStream.read(filePathBytes, 0, filePathLength);
+        String userPath = new String(filePathBytes, StandardCharsets.UTF_8);
+        System.out.println("File path received: " + userPath);
+
+        System.out.println("Get filename length.");
+        int filenameLength = inputStream.readInt();
+
+        byte[] filenameBytes = new byte[filenameLength];
+        inputStream.read(filenameBytes, 0, filenameLength);
+        String filename = new String(filenameBytes, StandardCharsets.UTF_8);
+        System.out.println("Filename received: " + filename);
+
+        File downloadFile = new File(userPath + File.separator + filename);
+        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(downloadFile));
+
+        System.out.println("Get file length.");
+        long fileSize = inputStream.readLong();
+
+        byte[] buf = new byte[256];
+        for (int i = 0; i < (fileSize + 255) / 256; i++) {
+            int read = inputStream.read(buf);
+            fileOut.write(buf, 0, read);
+        }
+        fileOut.flush();
+        fileOut.close();
+        System.out.println("File received.");
     }
 
     public void delete(Path path) throws IOException {

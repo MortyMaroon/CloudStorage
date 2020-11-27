@@ -2,6 +2,7 @@ package com.controller;
 
 import com.client.FileService;
 import com.client.Network;
+import com.client.NetworkReaderWriter;
 import com.main.ClientMain;
 import com.utils.FileInfo;
 import com.utils.FileType;
@@ -23,6 +24,7 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 public class MainController implements Initializable {
+    private final NetworkReaderWriter networkReaderWriter = new NetworkReaderWriter();
     private final Network network = Network.getNetwork();
     private final FileService fileService = new FileService();
 
@@ -44,31 +46,35 @@ public class MainController implements Initializable {
         setupTableEvents(serverTable);
         Thread thread = new Thread(() -> {
             while (true) {
-                String msg = network.readMassage();
-                if (msg.startsWith("exit\nOk")) {
-                    network.closeConnection();
-                    Platform.exit();
-                    break;
-                } else if (msg.startsWith("/updateUserList")) {
-                    updateUserList(Paths.get(getCurrentPath()));
-                } else if (msg.startsWith("/fileList")){
-                    if (msg.split("\n").length > 1) {
-                        List<FileInfo> serverList = fileService.makeFileList(msg.split("\n", 2)[1]);
-                        Platform.runLater(() -> {
-                            serverTable.getItems().clear();
-                            serverList.forEach(element -> serverTable.getItems().add(element));
-                            serverTable.sort();
-                        });
-                    }else {
-                        Platform.runLater(() -> serverTable.getItems().clear());
+                try {
+                    String msg = networkReaderWriter.readFromNetwork(network.getInputStream());
+                    if (msg.startsWith("exit\nOk")) {
+                        network.closeConnection();
+                        Platform.exit();
+                        break;
+                    } else if (msg.startsWith("/updateUserList")) {
+                        updateUserList(Paths.get(getCurrentPath()));
+                    } else if (msg.startsWith("/fileList")){
+                        if (msg.split("\n").length > 1) {
+                            List<FileInfo> serverList = fileService.makeFileList(msg.split("\n", 2)[1]);
+                            Platform.runLater(() -> {
+                                serverTable.getItems().clear();
+                                serverList.forEach(element -> serverTable.getItems().add(element));
+                                serverTable.sort();
+                            });
+                        }else {
+                            Platform.runLater(() -> serverTable.getItems().clear());
+                        }
+                    } else if (msg.startsWith("/error")) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
+                        alert.setTitle(msg.split("\n")[1]);
+                        alert.showAndWait();
+                    } else if (msg.startsWith("/disconnect\nOk")) {
+                        Platform.runLater(() -> ClientMain.getInstance().toAuthorizationScreen());
+                        break;
                     }
-                } else if (msg.startsWith("/error")) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
-                    alert.setTitle(msg.split("\n")[1]);
-                    alert.showAndWait();
-                } else if (msg.startsWith("/disconnect\nOk")) {
-                    Platform.runLater(() -> ClientMain.getInstance().toAuthorizationScreen());
-                    break;
+                } catch (IOException exception) {
+                    createAlert(exception);
                 }
             }
         });
@@ -110,7 +116,7 @@ public class MainController implements Initializable {
             }
         } else {
             try {
-                fileService.sendCommand(network.getOutputStream() ,"/enterToDirectory\n" + getSelectedFileName());
+                networkReaderWriter.writeToNetwork(network.getOutputStream() ,"/enterToDirectory\n" + getSelectedFileName());
             } catch (IOException exception) {
                 createAlert(exception);
             }
@@ -140,7 +146,7 @@ public class MainController implements Initializable {
             Optional<ButtonType> option = deleteAlert.showAndWait();
             if (option.isPresent() && option.get() == ButtonType.OK) {
                 try {
-                    fileService.sendCommand(network.getOutputStream(), "/delete\n" + fileName);
+                    networkReaderWriter.writeToNetwork(network.getOutputStream(), "/delete\n" + fileName);
                 } catch (IOException exception) {
                     createAlert(exception);
                 }
@@ -171,7 +177,7 @@ public class MainController implements Initializable {
             Optional<String> result = folderCreatingWindow.showAndWait();
             if (result.isPresent()) {
                 try {
-                    fileService.sendCommand(network.getOutputStream(), "/mkdir\n" + result.get());
+                    networkReaderWriter.writeToNetwork(network.getOutputStream(), "/mkdir\n" + result.get());
                 } catch (IOException exception) {
                     createAlert(exception);
                 }
@@ -200,7 +206,7 @@ public class MainController implements Initializable {
 
     private void updateServerList() {
         try {
-            fileService.sendCommand(network.getOutputStream(), "/updateFileList\n");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/updateFileList\n");
         } catch (IOException exception) {
             createAlert(exception);
         }
@@ -228,7 +234,7 @@ public class MainController implements Initializable {
 
     public void serverPathUp() {
         try {
-            fileService.sendCommand(network.getOutputStream(), "/upDirectory");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/upDirectory");
         } catch (IOException exception) {
             createAlert(exception);
         }
@@ -236,7 +242,7 @@ public class MainController implements Initializable {
 
     public void Exit() {
         try {
-            fileService.sendCommand(network.getOutputStream(),"exit");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(),"exit");
         } catch (IOException exception) {
             createAlert(exception);
         }
@@ -259,7 +265,7 @@ public class MainController implements Initializable {
     public void download() {
         if (serverTable.isFocused()) {
             try {
-                fileService.sendCommand(network.getOutputStream(), "/download\n" + getSelectedFileName() + "\n" + getCurrentPath());
+                networkReaderWriter.writeToNetwork(network.getOutputStream(), "/download\n" + getSelectedFileName() + "\n" + getCurrentPath());
             } catch (IOException exception) {
                 createAlert(exception);
             }
@@ -268,7 +274,7 @@ public class MainController implements Initializable {
 
     public void toAuthMenu() {
         try {
-            fileService.sendCommand(network.getOutputStream(), "/disconnect");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/disconnect");
         } catch (IOException exception) {
             createAlert(exception);
         }

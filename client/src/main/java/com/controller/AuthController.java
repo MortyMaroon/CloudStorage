@@ -1,7 +1,7 @@
 package com.controller;
 
-import com.client.FileService;
 import com.client.Network;
+import com.client.NetworkReaderWriter;
 import com.main.ClientMain;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -14,8 +14,8 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class AuthController implements Initializable {
+    private final NetworkReaderWriter networkReaderWriter = new NetworkReaderWriter();
     private final Network network = Network.getNetwork();
-    private final FileService fileService = new FileService();
 
     @FXML
     private TextField Login, NewLogin;
@@ -30,21 +30,25 @@ public class AuthController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         Thread thread = new Thread(() -> {
             while (true) {
-                String str = network.readMassage();
-                if (str.startsWith("/auth\nok")) {
-                    Platform.runLater(this::changeMainScreen);
-                    break;
-                }
-                if (str.startsWith("/auth\nnoSuch")) {
-                    Platform.runLater(this::setLogLabel);
-                }
-                if (str.startsWith("/login\nbusy")) {
-                    Platform.runLater(this::setRegLabel);
-                }
-                if (str.startsWith("exit\nOk")) {
-                    network.closeConnection();
-                    Platform.exit();
-                    break;
+                try {
+                    String str = networkReaderWriter.readFromNetwork(network.getInputStream());
+                    if (str.startsWith("/auth\nok")) {
+                        Platform.runLater(this::changeMainScreen);
+                        break;
+                    }
+                    if (str.startsWith("/auth\nnoSuch")) {
+                        Platform.runLater(this::setLogLabel);
+                    }
+                    if (str.startsWith("/login\nbusy")) {
+                        Platform.runLater(this::setRegLabel);
+                    }
+                    if (str.startsWith("exit\nOk")) {
+                        network.closeConnection();
+                        Platform.exit();
+                        break;
+                    }
+                } catch (IOException exception) {
+                    exception.printStackTrace();
                 }
             }
         });
@@ -54,7 +58,7 @@ public class AuthController implements Initializable {
     public void signIN() {
         if (!Login.getText().isEmpty() && !Password.getText().isEmpty()) {
             try {
-                fileService.sendCommand(network.getOutputStream(), "/auth\n" + Login.getText() + "\n" + Password.getText());
+                networkReaderWriter.writeToNetwork(network.getOutputStream(), "/auth\n" + Login.getText() + "\n" + Password.getText());
                 Login.clear();
                 Password.clear();
             } catch (IOException exception) {
@@ -72,7 +76,7 @@ public class AuthController implements Initializable {
                 SignUpMessage.setText("Passwords do not match.");
             } else {
                 try {
-                    fileService.sendCommand(network.getOutputStream(), "/reg\n" + NewLogin.getText() + "\n" + NewPassword.getText());
+                    networkReaderWriter.writeToNetwork(network.getOutputStream(), "/reg\n" + NewLogin.getText() + "\n" + NewPassword.getText());
                 } catch (IOException exception) {
                     createAlert(exception);
                 }
@@ -114,9 +118,9 @@ public class AuthController implements Initializable {
     }
 
     public void exit() {
-        if (network.getStatus()) {
+        if (Network.getNetwork().getStatus()) {
             try {
-                fileService.sendCommand(network.getOutputStream(), "exit");
+                networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
             } catch (IOException exception) {
                 createAlert(exception);
             }
