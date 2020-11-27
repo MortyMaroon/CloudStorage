@@ -45,15 +45,21 @@ public class MainController implements Initializable {
         setupTableEvents(clientTable);
         setupTableEvents(serverTable);
         Thread thread = new Thread(() -> {
-            while (true) {
-                try {
+            try {
+                while (true) {
                     String msg = networkReaderWriter.readFromNetwork(network.getInputStream());
-                    if (msg.startsWith("exit\nOk")) {
+                    if (msg.startsWith("/updateUserList")) {
+                        updateUserList(Paths.get(getCurrentPath()));
+                    } else if (msg.startsWith("exit\nOk")) {
                         network.closeConnection();
                         Platform.exit();
+                    } else if (msg.startsWith("/disconnect\nOk")) {
+                        Platform.runLater(() -> ClientMain.getInstance().toAuthorizationScreen());
                         break;
-                    } else if (msg.startsWith("/updateUserList")) {
-                        updateUserList(Paths.get(getCurrentPath()));
+                    } else if (msg.startsWith("/error")) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
+                        alert.setTitle(msg.split("\n")[1]);
+                        alert.showAndWait();
                     } else if (msg.startsWith("/fileList")){
                         if (msg.split("\n").length > 1) {
                             List<FileInfo> serverList = fileService.makeFileList(msg.split("\n", 2)[1]);
@@ -65,17 +71,14 @@ public class MainController implements Initializable {
                         }else {
                             Platform.runLater(() -> serverTable.getItems().clear());
                         }
-                    } else if (msg.startsWith("/error")) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
-                        alert.setTitle(msg.split("\n")[1]);
-                        alert.showAndWait();
-                    } else if (msg.startsWith("/disconnect\nOk")) {
-                        Platform.runLater(() -> ClientMain.getInstance().toAuthorizationScreen());
-                        break;
                     }
-                } catch (IOException exception) {
-                    createAlert(exception);
                 }
+            } catch (IOException exception) {
+                Platform.runLater(() -> {
+                    createAlert(exception);
+                    network.closeConnection();
+                    Platform.exit();
+                });
             }
         });
         thread.start();
@@ -242,9 +245,12 @@ public class MainController implements Initializable {
 
     public void Exit() {
         try {
-            networkReaderWriter.writeToNetwork(network.getOutputStream(),"exit");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
+            network.closeConnection();
         } catch (IOException exception) {
             createAlert(exception);
+        } finally {
+            Platform.exit();
         }
     }
 
@@ -288,7 +294,7 @@ public class MainController implements Initializable {
     }
 
     private void createAlert(Exception exception) {
-        Alert errorAlert = new Alert(Alert.AlertType.WARNING, exception.getMessage(), ButtonType.OK);
+        Alert errorAlert = new Alert(Alert.AlertType.ERROR, exception.getMessage(), ButtonType.OK);
         errorAlert.setTitle(exception.getClass().getSimpleName());
         errorAlert.showAndWait();
     }

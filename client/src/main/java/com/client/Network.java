@@ -5,9 +5,9 @@ import java.net.Socket;
 
 public class Network {
     private static Network instanceNetwork;
-    private Socket socket;
-    private DataInputStream in;
-    private DataOutputStream out;
+    private final Socket socket;
+    private final DataInputStream in;
+    private final DataOutputStream out;
 
     public static Network getNetwork() {
         return instanceNetwork;

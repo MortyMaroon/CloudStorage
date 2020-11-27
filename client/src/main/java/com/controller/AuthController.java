@@ -29,8 +29,8 @@ public class AuthController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         Thread thread = new Thread(() -> {
-            while (true) {
-                try {
+            try {
+                while (true) {
                     String str = networkReaderWriter.readFromNetwork(network.getInputStream());
                     if (str.startsWith("/auth\nok")) {
                         Platform.runLater(this::changeMainScreen);
@@ -42,16 +42,16 @@ public class AuthController implements Initializable {
                     if (str.startsWith("/login\nbusy")) {
                         Platform.runLater(this::setRegLabel);
                     }
-                    if (str.startsWith("exit\nOk")) {
-                        network.closeConnection();
-                        Platform.exit();
-                        break;
-                    }
-                } catch (IOException exception) {
-                    exception.printStackTrace();
                 }
+            } catch (IOException exception) {
+                Platform.runLater(() -> {
+                    createAlert(exception);
+                    network.closeConnection();
+                    Platform.exit();
+                });
             }
         });
+        thread.setDaemon(true);
         thread.start();
     }
 
@@ -118,19 +118,18 @@ public class AuthController implements Initializable {
     }
 
     public void exit() {
-        if (Network.getNetwork().getStatus()) {
-            try {
-                networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
-            } catch (IOException exception) {
-                createAlert(exception);
-            }
-        } else {
+        try {
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
+            network.closeConnection();
+        } catch (IOException exception) {
+            createAlert(exception);
+        } finally {
             Platform.exit();
         }
     }
 
     private void createAlert(Exception exception) {
-        Alert errorAlert = new Alert(Alert.AlertType.WARNING, exception.getMessage(), ButtonType.OK);
+        Alert errorAlert = new Alert(Alert.AlertType.ERROR, exception.getMessage(), ButtonType.OK);
         errorAlert.setTitle(exception.getClass().getSimpleName());
         errorAlert.showAndWait();
     }
