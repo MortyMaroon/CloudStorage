@@ -77,7 +77,6 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                     builder.append(symbol);
                     commandLength--;
                 }
-                System.out.println();
                 currentState = State.COMMAND_DOING;
             }
 

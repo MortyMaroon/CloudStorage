@@ -45,9 +45,5 @@ public class Network {
             e.printStackTrace();
         }
     }
-
-    public boolean getStatus() {
-        return socket != null;
-    }
 }
 

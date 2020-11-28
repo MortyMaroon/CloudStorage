@@ -50,17 +50,24 @@ public class MainController implements Initializable {
                     String msg = networkReaderWriter.readFromNetwork(network.getInputStream());
                     if (msg.startsWith("/updateUserList")) {
                         updateUserList(Paths.get(getCurrentPath()));
-                    } else if (msg.startsWith("exit\nOk")) {
+                    }
+                    if (msg.startsWith("exit\nOk")) {
                         network.closeConnection();
                         Platform.exit();
-                    } else if (msg.startsWith("/disconnect\nOk")) {
+                        break;
+                    }
+                    if (msg.startsWith("/disconnect\nOk")) {
                         Platform.runLater(() -> ClientMain.getInstance().toAuthorizationScreen());
                         break;
-                    } else if (msg.startsWith("/error")) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
-                        alert.setTitle(msg.split("\n")[1]);
-                        alert.showAndWait();
-                    } else if (msg.startsWith("/fileList")){
+                    }
+                    if (msg.startsWith("/error")) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, msg.split("\n")[2], ButtonType.OK);
+                            alert.setTitle(msg.split("\n")[1]);
+                            alert.showAndWait();
+                        });
+                    }
+                    if (msg.startsWith("/fileList")){
                         if (msg.split("\n").length > 1) {
                             List<FileInfo> serverList = fileService.makeFileList(msg.split("\n", 2)[1]);
                             Platform.runLater(() -> {
@@ -81,39 +88,38 @@ public class MainController implements Initializable {
                 });
             }
         });
+        thread.setDaemon(true);
         thread.start();
         updateUserList(Paths.get("/"));
         updateServerList();
     }
 
     private void setupTableEvents(TableView<FileInfo> tableView) {
+        createContextMenu(tableView);
         tableView.setOnMouseClicked(event ->  {
             if (event.getClickCount() == 2) {
                 if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.DIRECTORY) {
                     enter();
                 }
             }
-            if (event.isSecondaryButtonDown()) {
-
-            }
         });
         tableView.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
+                if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.DIRECTORY) {
+                    enter();
+                }
                 enter();
-            }
-            if (event.getCode() == KeyCode.DELETE) {
-                delete();
+            } else if (event.getCode() == KeyCode.DELETE) {
+                if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
+                    delete();
+                }
             }
         });
     }
 
     private void enter() {
         if (clientTable.isFocused()) {
-            Path path = Paths.get(userPathField.getText())
-                    .resolve(clientTable.
-                            getSelectionModel()
-                            .getSelectedItem()
-                            .getFileName());
+            Path path = Paths.get(userPathField.getText()).resolve(getSelectedFileName());
             if (Files.isDirectory(path)) {
                 updateUserList(path);
             }
@@ -190,11 +196,7 @@ public class MainController implements Initializable {
 
     private void renameFile() {
         if (clientTable.isFocused()) {
-            Path path = Paths.get(userPathField.getText())
-                    .resolve(clientTable.
-                            getSelectionModel()
-                            .getSelectedItem()
-                            .getFileName());
+            Path path = Paths.get(userPathField.getText()).resolve(getSelectedFileName());
             if (!Files.isDirectory(path)) {
                 TextInputDialog folderCreatingWindow = new TextInputDialog();
                 folderCreatingWindow.setTitle("Rename folder");
@@ -269,10 +271,9 @@ public class MainController implements Initializable {
     public void Exit() {
         try {
             networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
-            network.closeConnection();
         } catch (IOException exception) {
             createAlert(exception);
-        } finally {
+            network.closeConnection();
             Platform.exit();
         }
     }
@@ -321,4 +322,20 @@ public class MainController implements Initializable {
         errorAlert.setTitle(exception.getClass().getSimpleName());
         errorAlert.showAndWait();
     }
+
+    private void createContextMenu(TableView<FileInfo> table) {
+            table.setRowFactory(param -> {
+                MenuItem delete = new MenuItem("Delete");
+                MenuItem createDirectory = new MenuItem("Create directory");
+                MenuItem renameFile = new MenuItem("Rename file");
+                delete.setOnAction(event -> delete());
+                createDirectory.setOnAction(event -> createNewDirectory());
+                renameFile.setOnAction(event -> renameFile());
+                ContextMenu contextMenu = new ContextMenu(delete, createDirectory, renameFile);
+                TableRow<FileInfo> row = new TableRow<>();
+                row.contextMenuProperty().setValue(contextMenu);
+                return row;
+            });
+    }
 }
+

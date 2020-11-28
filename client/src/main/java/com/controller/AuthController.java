@@ -42,6 +42,11 @@ public class AuthController implements Initializable {
                     if (str.startsWith("/login\nbusy")) {
                         Platform.runLater(this::setRegLabel);
                     }
+                    if (str.startsWith("exit\nOk")) {
+                        network.closeConnection();
+                        Platform.exit();
+                        break;
+                    }
                 }
             } catch (IOException exception) {
                 Platform.runLater(() -> {
@@ -120,10 +125,9 @@ public class AuthController implements Initializable {
     public void exit() {
         try {
             networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
-            network.closeConnection();
         } catch (IOException exception) {
             createAlert(exception);
-        } finally {
+            network.closeConnection();
             Platform.exit();
         }
     }
