@@ -3,6 +3,7 @@ package com.handlers;
 import com.service.AuthService;
 import com.utils.FileInfo;
 import com.service.MessageService;
+import com.utils.FileService;
 import com.utils.Signal;
 import com.utils.State;
 import io.netty.buffer.ByteBuf;
@@ -25,7 +26,8 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private BufferedOutputStream outFile;
     private StringBuilder builder;
     private Path userPath;
-    private final MessageService fileService = new MessageService();
+    private final MessageService messageService = new MessageService();
+    private final FileService fileService = new FileService();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
@@ -87,9 +89,9 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         Path path = AuthService.authorization(cmd[1],cmd[2]);
                         if (path != null) {
                             userPath = path;
-                            fileService.sendCommand(ctx.channel(), "/auth\nok");
+                            messageService.sendCommand(ctx.channel(), "/auth\nok");
                         } else {
-                            fileService.sendCommand(ctx.channel(), "/auth\nnoSuch");
+                            messageService.sendCommand(ctx.channel(), "/auth\nnoSuch");
                         }
                         currentState = State.WAIT;
                         break;
@@ -98,15 +100,15 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         Path newPath = AuthService.registration(cmd[1],cmd[2]);
                         if (newPath != null) {
                             userPath = newPath;
-                            fileService.sendCommand(ctx.channel(), "/auth\nok");
+                            messageService.sendCommand(ctx.channel(), "/auth\nok");
                         } else {
-                            fileService.sendCommand(ctx.channel(), "/login\nbusy");
+                            messageService.sendCommand(ctx.channel(), "/login\nbusy");
                         }
                         currentState = State.WAIT;
                         break;
 
                     case "exit":
-                        fileService.sendCommand(ctx.channel(), "exit\nOk");
+                        messageService.sendCommand(ctx.channel(), "exit\nOk");
                         ctx.close();
                         break;
 
@@ -130,62 +132,50 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
 
                     case "/delete":
                         try {
-                            Files.delete(userPath.resolve(cmd[1]));
+                            fileService.delete(userPath.resolve(cmd[1]));
                             currentState = State.UPDATE_FILE_LIST;
                             break;
                         } catch (IOException exception) {
-                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
+                            messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
                             currentState = State.WAIT;
                             break;
                         }
 
                     case "/download":
                         try {
-                            fileService.uploadFile(ctx.channel(), userPath.resolve(cmd[1]), cmd[2]);
+                            messageService.uploadFile(ctx.channel(), userPath.resolve(cmd[1]), cmd[2]);
                             currentState = State.WAIT;
                             break;
                         } catch (IOException exception) {
-                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
+                            messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
                             currentState = State.WAIT;
                             break;
                         }
 
                     case "/disconnect":
                         userPath = null;
-                        fileService.sendCommand(ctx.channel(), "/disconnect\nOk");
+                        messageService.sendCommand(ctx.channel(), "/disconnect\nOk");
                         currentState = State.WAIT;
                         break;
 
                     case "/mkdir":
                         try {
-                            File directory = new File(userPath + File.separator + cmd[1]);
-                            if (directory.exists()) {
-                                throw new Exception("Directory is already exist");
-                            } else {
-                                if (!directory.mkdir()) {
-                                    throw new Exception("Failed to create directory");
-                                }
-                            }
+                            fileService.createDirectory(userPath, cmd[1]);
                             currentState = State.UPDATE_FILE_LIST;
                             break;
                         } catch (Exception exception) {
-                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                            messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
                             currentState = State.WAIT;
                             break;
                         }
 
                     case "/rename":
                         try {
-                            File file = new File(userPath + File.separator + cmd[1]);
-                            File renameFile = new File(userPath + File.separator + cmd[2]);
-                            if (file.renameTo(renameFile)) {
-                                currentState = State.UPDATE_FILE_LIST;
-                                break;
-                            } else {
-                                throw new Exception("Failed to rename file");
-                            }
+                            fileService.renameFile(userPath, cmd[1], cmd[2]);
+                            currentState = State.UPDATE_FILE_LIST;
+                            break;
                         } catch (Exception exception) {
-                            fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                            messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
                             currentState = State.WAIT;
                             break;
                         }
@@ -213,7 +203,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                 try {
                     outFile = new BufferedOutputStream(new FileOutputStream(downloadFile));
                 } catch (FileNotFoundException exception) {
-                    fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                    messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
                     currentState = State.WAIT;
                     break;
                 }
@@ -253,10 +243,10 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                                 fileInfo.getSize(),
                                 fileInfo.getLastModified()));
                     }
-                    fileService.sendCommand(ctx.channel(), "/fileList\n" + builder.toString());
+                    messageService.sendCommand(ctx.channel(), "/fileList\n" + builder.toString());
                     currentState = State.WAIT;
                 } catch (IOException exception) {
-                    fileService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
+                    messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));
                     currentState = State.WAIT;
                     break;
                 }

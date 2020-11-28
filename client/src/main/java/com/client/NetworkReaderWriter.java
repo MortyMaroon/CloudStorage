@@ -1,5 +1,6 @@
 package com.client;
 
+import com.utils.FileService;
 import com.utils.Signal;
 
 import java.io.*;

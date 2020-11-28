@@ -1,8 +1,4 @@
-package com.client;
-
-import com.utils.FileInfo;
-import com.utils.FileType;
-import com.utils.Signal;
+package com.utils;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -95,6 +91,14 @@ public class FileService {
             if (!newDirectory.mkdir()){
                 throw new Exception("Failed to create directory");
             }
+        }
+    }
+
+    public void renameFile(Path path, String oldName, String newName) throws Exception {
+        File file = new File(path + File.separator + oldName);
+        File renameFile = new File(path + File.separator + newName);
+        if (!file.renameTo(renameFile)) {
+            throw new Exception("Failed to rename file");
         }
     }
 }

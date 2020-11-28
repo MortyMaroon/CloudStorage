@@ -1,6 +1,6 @@
 package com.controller;
 
-import com.client.FileService;
+import com.utils.FileService;
 import com.client.Network;
 import com.client.NetworkReaderWriter;
 import com.main.ClientMain;
@@ -183,6 +183,29 @@ public class MainController implements Initializable {
                     networkReaderWriter.writeToNetwork(network.getOutputStream(), "/mkdir\n" + result.get());
                 } catch (IOException exception) {
                     createAlert(exception);
+                }
+            }
+        }
+    }
+
+    private void renameFile() {
+        if (clientTable.isFocused()) {
+            Path path = Paths.get(userPathField.getText())
+                    .resolve(clientTable.
+                            getSelectionModel()
+                            .getSelectedItem()
+                            .getFileName());
+            if (!Files.isDirectory(path)) {
+                TextInputDialog folderCreatingWindow = new TextInputDialog();
+                folderCreatingWindow.setTitle("Rename folder");
+                folderCreatingWindow.setHeaderText("Enter a new name for the folder");
+                Optional<String> result = folderCreatingWindow.showAndWait();
+                if (result.isPresent()) {
+                    try {
+                        fileService.renameFile(path, getSelectedFileName(), result.get());
+                    } catch (Exception exception) {
+                        createAlert(exception);
+                    }
                 }
             }
         }
