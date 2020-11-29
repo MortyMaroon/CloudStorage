@@ -11,6 +11,18 @@ import java.nio.file.*;
 import java.time.format.DateTimeFormatter;
 
 public class TableController{
+    private static Image audio = new Image("images/files/audio.png");
+    private static Image doc = new Image("images/files/doc.png");
+    private static Image excel = new Image("images/files/excel.png");
+    private static Image folder = new Image("images/files/folder.png");
+    private static Image image = new Image("images/files/image.png");
+    private static Image pdf = new Image("images/files/pdf.png");
+    private static Image text = new Image("images/files/text.png");
+    private static Image unknown = new Image("images/files/unknown.png");
+    private static Image video = new Image("images/files/video.png");
+    private static Image word = new Image("images/files/word.png");
+    private static Image zip = new Image("images/files/zip.png");
+
     public static void makeTable(TableView<FileInfo> tableView) {
         TableColumn<FileInfo, String> fileTypeColumn = new TableColumn<>("Type");
         fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().getName()));
@@ -19,23 +31,47 @@ public class TableController{
         fileTypeColumn.setCellFactory(column -> new TableCell<FileInfo, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
-                System.out.println(item);
-                super.updateItem(item, empty);
+//                super.updateItem(item, empty);
+//                setText(null);
+//                if (item == null || empty) {
+//                    setStyle("");
+//                    setGraphic(null);
+//                } else {
+//                    ImageView iv = new ImageView("images/file.png");
+//                    iv.setFitHeight(15);
+//                    iv.setFitWidth(15);
+//                    if (item.equals("U")) {
+//                        iv.setImage(new Image("images/up.png"));
+//                    }
+//                    if (item.equals("D")) {
+//                        iv.setImage(new Image("images/folder.png"));
+//                    }
+//                    setGraphic(iv);
+//                }
                 setText(null);
                 if (item == null || empty) {
                     setStyle("");
                     setGraphic(null);
                 } else {
-                    ImageView iv = new ImageView("images/file.png");
-                    iv.setFitHeight(15);
-                    iv.setFitWidth(15);
-                    if (item.equals("U")) {
-                        iv.setImage(new Image("images/up.png"));
+                    ImageView imageView = new ImageView("images/file.png");
+                    imageView.setFitHeight(15);
+                    imageView.setFitWidth(15);
+                    if (!item.contains(".")) {
+                        imageView.setImage(folder);
+                    } else if (item.matches(".*\\.docx$")) {
+                        imageView.setImage(doc);
+                    } else if (item.matches(".*\\.(png|jpg|jpeg|gif|tiff|psd)$")) {
+                        imageView.setImage(image);
+                    } else if (item.matches(".*\\.pdf$")) {
+                        imageView.setImage(pdf);
+                    } else if (item.matches(".*\\.txt$")) {
+                        imageView.setImage(text);
+                    } else if (item.matches(".*\\.(zip|rar)$")) {
+                        imageView.setImage(zip);
+                    } else {
+                        imageView.setImage(unknown);
                     }
-                    if (item.equals("D")) {
-                        iv.setImage(new Image("images/folder.png"));
-                    }
-                    setGraphic(iv);
+                    setGraphic(imageView);
                 }
             }
         });
