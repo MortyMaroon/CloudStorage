@@ -6,53 +6,43 @@
 <?import javafx.scene.layout.*?>
 
 <VBox alignment="center" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.controller.MainController">
-   <children>
        <MenuBar>
           <menus>
               <Menu text="Menu">
                  <items>
-                     <MenuItem text="Exit" onAction="#Exit"/>
-                     <MenuItem text="Change user" onAction="#toAuthMenu"/>
-                     <MenuItem text="Info" onAction="#info"/>
+                     <MenuItem onAction="#Exit" text="Exit" />
+                     <MenuItem onAction="#toAuthMenu" text="Change user" />
                  </items>
               </Menu>
+            <Menu mnemonicParsing="false" text="Info">
+              <items>
+                     <MenuItem onAction="#info" text="Info" />
+              </items>
+            </Menu>
           </menus>
        </MenuBar>
        <HBox VBox.vgrow="ALWAYS">
-          <children>
               <VBox HBox.hgrow="ALWAYS">
-                 <children>
                      <HBox>
-                        <children>
                             <ComboBox fx:id="disksBox" onAction="#selectDisc" prefHeight="25.0" prefWidth="67.0" />
                             <Button onAction="#userPathUp" prefHeight="25.0" prefWidth="35.0" text="Up" />
                             <TextField fx:id="userPathField" editable="false" HBox.hgrow="ALWAYS" />
-                        </children>
                      </HBox>
-                     <TableView fx:id="clientTable" VBox.vgrow="ALWAYS" />
-                 </children>
+                     <TableView fx:id="clientTable" prefHeight="400.0" prefWidth="514.0" VBox.vgrow="ALWAYS" />
               </VBox>
               <VBox HBox.hgrow="ALWAYS">
-                 <children>
                      <HBox>
-                        <children>
                             <Button onAction="#serverPathUp" prefHeight="25.0" prefWidth="35.0" text="Up" />
                             <TextField fx:id="serverPathField" editable="false" HBox.hgrow="ALWAYS" />
-                        </children>
                      </HBox>
-                     <TableView fx:id="serverTable" VBox.vgrow="ALWAYS" />
-                 </children>
+                     <TableView fx:id="serverTable" prefHeight="400.0" prefWidth="514.0" VBox.vgrow="ALWAYS" />
               </VBox>
-          </children>
        </HBox>
        <HBox spacing="5">
-          <children>
-              <Button onAction="#upload" focusTraversable="false" maxWidth="Infinity" text="Upload to the cloud" HBox.hgrow="ALWAYS" />
-              <Button onAction="#download" focusTraversable="false" maxWidth="Infinity" prefHeight="25.0" prefWidth="118.0" text="Download to your computer" HBox.hgrow="ALWAYS" />
-          </children>
+              <Button focusTraversable="false" maxWidth="Infinity" onAction="#upload" text="Upload to the cloud" HBox.hgrow="ALWAYS" />
+              <Button focusTraversable="false" maxWidth="Infinity" onAction="#download" prefHeight="25.0" prefWidth="118.0" text="Download to your computer" HBox.hgrow="ALWAYS" />
            <padding>
                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
            </padding>
        </HBox>
-   </children>
 </VBox>
