@@ -1,5 +1,6 @@
 package com.controller;
 
+import com.client.WindowService;
 import com.utils.FileService;
 import com.client.Network;
 import com.client.NetworkReaderWriter;
@@ -67,6 +68,9 @@ public class MainController implements Initializable {
                             alert.showAndWait();
                         });
                     }
+                    if (msg.startsWith("/serverPath")) {
+                        Platform.runLater(() -> serverPathField.setText(msg.split("\n")[1]));
+                    }
                     if (msg.startsWith("/fileList")){
                         if (msg.split("\n").length > 1) {
                             List<FileInfo> serverList = fileService.makeFileList(msg.split("\n", 2)[1]);
@@ -82,7 +86,7 @@ public class MainController implements Initializable {
                 }
             } catch (IOException exception) {
                 Platform.runLater(() -> {
-                    createAlert(exception);
+                    WindowService.createAlert(exception);
                     network.closeConnection();
                     Platform.exit();
                 });
@@ -95,7 +99,6 @@ public class MainController implements Initializable {
     }
 
     private void setupTableEvents(TableView<FileInfo> tableView) {
-        createContextMenu(tableView);
         tableView.setOnMouseClicked(event ->  {
             if (event.getClickCount() == 2) {
                 if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.DIRECTORY) {
@@ -108,7 +111,6 @@ public class MainController implements Initializable {
                 if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.DIRECTORY) {
                     enter();
                 }
-                enter();
             } else if (event.getCode() == KeyCode.DELETE) {
                 if (tableView.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
                     delete();
@@ -119,76 +121,39 @@ public class MainController implements Initializable {
 
     private void enter() {
         if (clientTable.isFocused()) {
-            Path path = Paths.get(userPathField.getText()).resolve(getSelectedFileName());
-            if (Files.isDirectory(path)) {
-                updateUserList(path);
-            }
+            updateUserList(Paths.get(userPathField.getText()).resolve(getSelectedFileName()));
         } else {
             try {
                 networkReaderWriter.writeToNetwork(network.getOutputStream() ,"/enterToDirectory\n" + getSelectedFileName());
             } catch (IOException exception) {
-                createAlert(exception);
+                WindowService.createAlert(exception);
             }
         }
     }
 
     private void delete() {
         if (clientTable.isFocused()) {
-            Path deletedFile = getSelectedFile();
-            Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            deleteAlert.setTitle("Delete");
-            deleteAlert.setContentText("Are you sure you want to delete this file?");
-            Optional<ButtonType> option = deleteAlert.showAndWait();
-            if (option.isPresent() && option.get() == ButtonType.OK) {
-                try {
-                    fileService.delete(deletedFile);
-                } catch (IOException exception) {
-                    createAlert(exception);
-                }
-                updateUserList(Paths.get(getCurrentPath()));
-            }
-        } else {
-            String fileName = getSelectedFileName();
-            Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            deleteAlert.setTitle("Delete");
-            deleteAlert.setContentText("Are you sure you want to delete this file?");
-            Optional<ButtonType> option = deleteAlert.showAndWait();
-            if (option.isPresent() && option.get() == ButtonType.OK) {
-                try {
-                    networkReaderWriter.writeToNetwork(network.getOutputStream(), "/delete\n" + fileName);
-                } catch (IOException exception) {
-                    createAlert(exception);
-                }
-            }
-        }
-    }
-
-    private void createNewDirectory() {
-        if (clientTable.isFocused()) {
-            TextInputDialog folderCreatingWindow = new TextInputDialog();
-            folderCreatingWindow.setTitle("Create new folder");
-            folderCreatingWindow.setHeaderText("Enter a name for the new folder");
-            Optional<String> result = folderCreatingWindow.showAndWait();
-            if (result.isPresent()) {
-                try {
-                    fileService.createDirectory(Paths.get(getCurrentPath()), result.get());
-                } catch (Exception exception) {
-                    createAlert(exception);
-                } finally {
+            if (clientTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
+                Optional<ButtonType> option = WindowService.alertOption("Delete", "Are you sure you want to delete this file?");
+                if (option.isPresent() && option.get() == ButtonType.OK) {
+                    try {
+                        fileService.delete(getSelectedFile());
+                    } catch (IOException exception) {
+                        WindowService.createAlert(exception);
+                    }
                     updateUserList(Paths.get(getCurrentPath()));
                 }
             }
         }
-        if (serverTable.isFocused()) {
-            TextInputDialog folderCreatingWindow = new TextInputDialog();
-            folderCreatingWindow.setTitle("Create new folder");
-            folderCreatingWindow.setHeaderText("Enter a name for the new folder");
-            Optional<String> result = folderCreatingWindow.showAndWait();
-            if (result.isPresent()) {
-                try {
-                    networkReaderWriter.writeToNetwork(network.getOutputStream(), "/mkdir\n" + result.get());
-                } catch (IOException exception) {
-                    createAlert(exception);
+        if (serverTable.isFocused()){
+            if (serverTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
+                Optional<ButtonType> option = WindowService.alertOption("Delete", "Are you sure you want to delete this file?");
+                if (option.isPresent() && option.get() == ButtonType.OK) {
+                    try {
+                        networkReaderWriter.writeToNetwork(network.getOutputStream(), "/delete\n" + getSelectedFileName());
+                    } catch (IOException exception) {
+                        WindowService.createAlert(exception);
+                    }
                 }
             }
         }
@@ -196,17 +161,25 @@ public class MainController implements Initializable {
 
     private void renameFile() {
         if (clientTable.isFocused()) {
-            Path path = Paths.get(userPathField.getText()).resolve(getSelectedFileName());
-            if (!Files.isDirectory(path)) {
-                TextInputDialog folderCreatingWindow = new TextInputDialog();
-                folderCreatingWindow.setTitle("Rename folder");
-                folderCreatingWindow.setHeaderText("Enter a new name for the folder");
-                Optional<String> result = folderCreatingWindow.showAndWait();
+            if (clientTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
+                Optional<String> result = WindowService.dialogOption("Rename file", "Enter a new name for the file");
                 if (result.isPresent()) {
                     try {
-                        fileService.renameFile(path, getSelectedFileName(), result.get());
+                        fileService.renameFile(Paths.get(userPathField.getText()).resolve(getSelectedFileName()), getSelectedFileName(), result.get());
                     } catch (Exception exception) {
-                        createAlert(exception);
+                        WindowService.createAlert(exception);
+                    }
+                }
+            }
+        }
+        if (serverTable.isFocused()) {
+            if (serverTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
+                Optional<String> result = WindowService.dialogOption("Rename file", "Enter a new name for the file");
+                if (result.isPresent()) {
+                    try {
+                        networkReaderWriter.writeToNetwork(network.getOutputStream(), String.format("/rename\n%s\n%s", getSelectedFileName(), result.get()));
+                    } catch (Exception exception) {
+                        WindowService.createAlert(exception);
                     }
                 }
             }
@@ -236,20 +209,13 @@ public class MainController implements Initializable {
         try {
             networkReaderWriter.writeToNetwork(network.getOutputStream(), "/updateFileList\n");
         } catch (IOException exception) {
-            createAlert(exception);
+            WindowService.createAlert(exception);
         }
     }
 
     public void selectDisc(ActionEvent actionEvent) {
         ComboBox<String> element = (ComboBox<String>) actionEvent.getSource();
         updateUserList(Paths.get(element.getSelectionModel().getSelectedItem()));
-    }
-
-    public void userPathUp() {
-        Path upperPath = Paths.get(userPathField.getText()).getParent();
-        if (upperPath != null) {
-            updateUserList(upperPath);
-        }
     }
 
     private String getSelectedFileName() {
@@ -260,19 +226,11 @@ public class MainController implements Initializable {
         }
     }
 
-    public void serverPathUp() {
-        try {
-            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/upDirectory");
-        } catch (IOException exception) {
-            createAlert(exception);
-        }
-    }
-
     public void Exit() {
         try {
-            networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "exit\n");
         } catch (IOException exception) {
-            createAlert(exception);
+            WindowService.createAlert(exception);
             network.closeConnection();
             Platform.exit();
         }
@@ -282,31 +240,11 @@ public class MainController implements Initializable {
         return userPathField.getText();
     }
 
-    public void upload() {
-        if (clientTable.isFocused()) {
-            try {
-                fileService.sendFile(network.getOutputStream(), getSelectedFile());
-            } catch (IOException exception) {
-                createAlert(exception);
-            }
-        }
-    }
-
-    public void download() {
-        if (serverTable.isFocused()) {
-            try {
-                networkReaderWriter.writeToNetwork(network.getOutputStream(), "/download\n" + getSelectedFileName() + "\n" + getCurrentPath());
-            } catch (IOException exception) {
-                createAlert(exception);
-            }
-        }
-    }
-
     public void toAuthMenu() {
         try {
-            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/disconnect");
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/disconnect\n");
         } catch (IOException exception) {
-            createAlert(exception);
+            WindowService.createAlert(exception);
         }
     }
 
@@ -317,25 +255,122 @@ public class MainController implements Initializable {
         info.showAndWait();
     }
 
-    private void createAlert(Exception exception) {
-        Alert errorAlert = new Alert(Alert.AlertType.ERROR, exception.getMessage(), ButtonType.OK);
-        errorAlert.setTitle(exception.getClass().getSimpleName());
-        errorAlert.showAndWait();
+    public void sendFile() {
+        if (clientTable.isFocused()) {
+            try {
+                fileService.sendFile(network.getOutputStream(), getSelectedFile());
+            } catch (IOException exception) {
+                WindowService. createAlert(exception);
+            }
+        }
     }
 
-    private void createContextMenu(TableView<FileInfo> table) {
-            table.setRowFactory(param -> {
-                MenuItem delete = new MenuItem("Delete");
-                MenuItem createDirectory = new MenuItem("Create directory");
-                MenuItem renameFile = new MenuItem("Rename file");
-                delete.setOnAction(event -> delete());
-                createDirectory.setOnAction(event -> createNewDirectory());
-                renameFile.setOnAction(event -> renameFile());
-                ContextMenu contextMenu = new ContextMenu(delete, createDirectory, renameFile);
-                TableRow<FileInfo> row = new TableRow<>();
-                row.contextMenuProperty().setValue(contextMenu);
-                return row;
-            });
+    public void updateUserTable() {
+        updateUserList(Paths.get(getCurrentPath()));
+    }
+
+    public void backUser() {
+        Path upperPath = Paths.get(userPathField.getText()).getParent();
+        if (upperPath != null) {
+            updateUserList(upperPath);
+        }
+    }
+
+    public void toHomeUser() {
+        updateUserList(Paths.get("/"));
+    }
+
+    public void renameUserFile() {
+        renameFile();
+    }
+
+    public void deleteUserFile() {
+        delete();
+    }
+
+    public void downloadFile() {
+        if (serverTable.isFocused()) {
+            try {
+                networkReaderWriter.writeToNetwork(network.getOutputStream(), String.format("/download\n%s\n%s", getSelectedFileName(), getCurrentPath()));
+            } catch (IOException exception) {
+                WindowService.createAlert(exception);
+            }
+        }
+    }
+
+    public void updateServerTable() {
+        updateServerList();
+    }
+
+    public void backServer() {
+        try {
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/upDirectory\n");
+        } catch (IOException exception) {
+            WindowService.createAlert(exception);
+        }
+    }
+
+    public void toHomeServer() {
+        try {
+            networkReaderWriter.writeToNetwork(network.getOutputStream(), "/toHomeDirectory\n");
+        } catch (IOException exception) {
+            WindowService.createAlert(exception);
+        }
+    }
+
+    public void renameServerFile() {
+        renameFile();
+    }
+
+    public void deleteServerFile() {
+        delete();
+    }
+
+    public void createServerFolder() {
+        Optional<String> result = WindowService.dialogOption("Create new folder", "Enter a name for the new folder");
+        if (result.isPresent()) {
+            try {
+                networkReaderWriter.writeToNetwork(network.getOutputStream(), "/mkdir\n" + result.get());
+            } catch (IOException exception) {
+                WindowService.createAlert(exception);
+            }
+        }
+    }
+
+    public void createServerFile() {
+        Optional<String> result = WindowService.dialogOption("Create new file", "Enter a name for the new file");
+        if (result.isPresent()) {
+            try {
+                networkReaderWriter.writeToNetwork(network.getOutputStream(), "/createFile\n" + result.get());
+            } catch (IOException exception) {
+                WindowService.createAlert(exception);
+            }
+        }
+    }
+
+    public void createUserFolder() {
+        Optional<String> result = WindowService.dialogOption("Create new folder","Enter a name for the new folder");
+        if (result.isPresent()) {
+            try {
+                fileService.createDirectory(Paths.get(getCurrentPath()), result.get());
+            } catch (Exception exception) {
+                WindowService.createAlert(exception);
+            } finally {
+                updateUserList(Paths.get(getCurrentPath()));
+            }
+        }
+    }
+
+    public void createUserFile() {
+        Optional<String> result = WindowService.dialogOption("Create new file","Enter a name for the new file");
+        if (result.isPresent()) {
+            try {
+                fileService.createFile(Paths.get(getCurrentPath()), result.get());
+            } catch (Exception exception) {
+                WindowService.createAlert(exception);
+            } finally {
+                updateUserList(Paths.get(getCurrentPath()));
+            }
+        }
     }
 }
-

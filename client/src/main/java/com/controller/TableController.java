@@ -18,58 +18,51 @@ public class TableController{
     private static Image image = new Image("images/files/image.png");
     private static Image pdf = new Image("images/files/pdf.png");
     private static Image text = new Image("images/files/text.png");
-    private static Image unknown = new Image("images/files/unknown.png");
     private static Image video = new Image("images/files/video.png");
     private static Image word = new Image("images/files/word.png");
     private static Image zip = new Image("images/files/zip.png");
 
     public static void makeTable(TableView<FileInfo> tableView) {
         TableColumn<FileInfo, String> fileTypeColumn = new TableColumn<>("Type");
-        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().getName()));
-//        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getFileName()));
+        fileTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getFileName()));
         fileTypeColumn.setPrefWidth(20);
         fileTypeColumn.setCellFactory(column -> new TableCell<FileInfo, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
-//                super.updateItem(item, empty);
-//                setText(null);
-//                if (item == null || empty) {
-//                    setStyle("");
-//                    setGraphic(null);
-//                } else {
-//                    ImageView iv = new ImageView("images/file.png");
-//                    iv.setFitHeight(15);
-//                    iv.setFitWidth(15);
-//                    if (item.equals("U")) {
-//                        iv.setImage(new Image("images/up.png"));
-//                    }
-//                    if (item.equals("D")) {
-//                        iv.setImage(new Image("images/folder.png"));
-//                    }
-//                    setGraphic(iv);
-//                }
                 setText(null);
                 if (item == null || empty) {
                     setStyle("");
                     setGraphic(null);
                 } else {
-                    ImageView imageView = new ImageView("images/file.png");
+                    ImageView imageView = new ImageView(doc);
                     imageView.setFitHeight(15);
                     imageView.setFitWidth(15);
                     if (!item.contains(".")) {
                         imageView.setImage(folder);
-                    } else if (item.matches(".*\\.docx$")) {
-                        imageView.setImage(doc);
-                    } else if (item.matches(".*\\.(png|jpg|jpeg|gif|tiff|psd)$")) {
+                    }
+                    if (item.matches(".*\\.docx$")) {
+                        imageView.setImage(word);
+                    }
+                    if (item.matches(".*\\.(png|jpg|jpeg|gif|tiff|psd)$")) {
                         imageView.setImage(image);
-                    } else if (item.matches(".*\\.pdf$")) {
+                    }
+                    if (item.matches(".*\\.(mp4|mkv)$")) {
+                        imageView.setImage(video);
+                    }
+                    if (item.matches(".*\\.mp3$")) {
+                        imageView.setImage(audio);
+                    }
+                    if (item.matches(".*\\.pdf$")) {
                         imageView.setImage(pdf);
-                    } else if (item.matches(".*\\.txt$")) {
+                    }
+                    if (item.matches(".*\\.txt$")) {
                         imageView.setImage(text);
-                    } else if (item.matches(".*\\.(zip|rar)$")) {
+                    }
+                    if (item.matches(".*\\.xlsx$")) {
+                        imageView.setImage(excel);
+                    }
+                    if (item.matches(".*\\.(zip|rar)$")) {
                         imageView.setImage(zip);
-                    } else {
-                        imageView.setImage(unknown);
                     }
                     setGraphic(imageView);
                 }

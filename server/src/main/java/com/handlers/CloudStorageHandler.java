@@ -25,6 +25,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
     private long wasRead = 0L;
     private BufferedOutputStream outFile;
     private StringBuilder builder;
+    private String userName;
     private Path userPath;
     private final MessageService messageService = new MessageService();
     private final FileService fileService = new FileService();
@@ -81,12 +82,14 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
             }
 
             if (currentState == State.COMMAND_DOING) {
+                System.out.println(builder.toString());
                 String[] cmd = builder.toString().split("\n");
                 switch (cmd[0]) {
 
                     case "/auth":
                         Path path = AuthService.authorization(cmd[1],cmd[2]);
                         if (path != null) {
+                            userName = cmd[1];
                             userPath = path;
                             messageService.sendCommand(ctx.channel(), "/auth\nok");
                         } else {
@@ -98,6 +101,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                     case "/reg":
                         Path newPath = AuthService.registration(cmd[1],cmd[2]);
                         if (newPath != null) {
+                            userName = cmd[1];
                             userPath = newPath;
                             messageService.sendCommand(ctx.channel(), "/auth\nok");
                         } else {
@@ -121,7 +125,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         break;
 
                     case "/upDirectory":
-                        if (userPath.getParent().toString().equals(AuthService.getRootPath())){
+                        if (userPath.equals(Path.of(AuthService.getRootPath(), userName))){
                             currentState = State.WAIT;
                         } else {
                             userPath = userPath.getParent();
@@ -152,6 +156,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                         }
 
                     case "/disconnect":
+                        userName = null;
                         userPath = null;
                         messageService.sendCommand(ctx.channel(), "/disconnect\nOk");
                         currentState = State.WAIT;
@@ -178,6 +183,20 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                             currentState = State.WAIT;
                             break;
                         }
+                    case "/createFile":
+                        try {
+                            fileService.createFile(userPath, cmd[1]);
+                            currentState = State.UPDATE_FILE_LIST;
+                            break;
+                        } catch (Exception exception) {
+                            messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getCause().getMessage()));
+                            currentState = State.WAIT;
+                            break;
+                        }
+                    case "/toHomeDirectory":
+                        userPath = Path.of(AuthService.getRootPath(), userName);
+                        currentState = State.UPDATE_FILE_LIST;
+                        break;
 
                     default:
                         currentState = State.WAIT;
@@ -243,6 +262,7 @@ public class CloudStorageHandler extends ChannelInboundHandlerAdapter {
                                 fileInfo.getLastModified()));
                     }
                     messageService.sendCommand(ctx.channel(), "/fileList\n" + builder.toString());
+                    messageService.sendCommand(ctx.channel(), "/serverPath\n" + userPath.normalize().toString());
                     currentState = State.WAIT;
                 } catch (IOException exception) {
                     messageService.sendCommand(ctx.channel(), String.format("/error\n%s\n%s", exception.getClass().getSimpleName(), exception.getMessage()));

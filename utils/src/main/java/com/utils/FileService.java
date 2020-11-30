@@ -83,14 +83,26 @@ public class FileService {
         Files.delete(path);
     }
 
-    public void createDirectory(Path path, String folder) throws Exception {
-        File newDirectory = new File(path + File.separator + folder);
+    public void createDirectory(Path path, String folderName) throws Exception {
+        File newDirectory = new File(path + File.separator + folderName);
         if (newDirectory.exists()) {
             throw new Exception("The directory is already exists");
         } else {
             if (!newDirectory.mkdir()){
                 throw new Exception("Failed to create directory");
             }
+        }
+    }
+
+    public void createFile(Path path, String filename) throws Exception {
+        File newFile = new File(path + File.separator + filename);
+        if (newFile.exists()) {
+            throw new Exception("The file is already exists");
+        } else {
+            if (!newFile.createNewFile()) {
+                throw new Exception("Failed to create file");
+            }
+
         }
     }
 
