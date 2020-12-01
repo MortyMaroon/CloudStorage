@@ -133,27 +133,23 @@ public class MainController implements Initializable {
 
     private void delete() {
         if (clientTable.isFocused()) {
-            if (clientTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
-                Optional<ButtonType> option = WindowService.alertOption("Delete", "Are you sure you want to delete this file?");
-                if (option.isPresent() && option.get() == ButtonType.OK) {
-                    try {
-                        fileService.delete(getSelectedFile());
-                    } catch (IOException exception) {
-                        WindowService.createAlert(exception);
-                    }
-                    updateUserList(Paths.get(getCurrentPath()));
+            Optional<ButtonType> option = WindowService.alertOption("Delete", "Are you sure you want to delete this file?");
+            if (option.isPresent() && option.get() == ButtonType.OK) {
+                try {
+                    fileService.delete(getSelectedFile());
+                } catch (IOException exception) {
+                    WindowService.createAlert(exception);
                 }
+                updateUserList(Paths.get(getCurrentPath()));
             }
         }
         if (serverTable.isFocused()){
-            if (serverTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
-                Optional<ButtonType> option = WindowService.alertOption("Delete", "Are you sure you want to delete this file?");
-                if (option.isPresent() && option.get() == ButtonType.OK) {
-                    try {
-                        networkReaderWriter.writeToNetwork(network.getOutputStream(), "/delete\n" + getSelectedFileName());
-                    } catch (IOException exception) {
-                        WindowService.createAlert(exception);
-                    }
+            Optional<ButtonType> option = WindowService.alertOption("Delete", "Are you sure you want to delete this file?");
+            if (option.isPresent() && option.get() == ButtonType.OK) {
+                try {
+                    networkReaderWriter.writeToNetwork(network.getOutputStream(), "/delete\n" + getSelectedFileName());
+                } catch (IOException exception) {
+                    WindowService.createAlert(exception);
                 }
             }
         }
@@ -161,26 +157,22 @@ public class MainController implements Initializable {
 
     private void renameFile() {
         if (clientTable.isFocused()) {
-            if (clientTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
-                Optional<String> result = WindowService.dialogOption("Rename file", "Enter a new name for the file");
-                if (result.isPresent()) {
-                    try {
-                        fileService.renameFile(Paths.get(userPathField.getText()).resolve(getSelectedFileName()), getSelectedFileName(), result.get());
-                    } catch (Exception exception) {
-                        WindowService.createAlert(exception);
-                    }
+            Optional<String> result = WindowService.dialogOption("Rename file", "Enter a new name for the file");
+            if (result.isPresent()) {
+                try {
+                    fileService.renameFile(Paths.get(userPathField.getText()).resolve(getSelectedFileName()), getSelectedFileName(), result.get());
+                } catch (Exception exception) {
+                    WindowService.createAlert(exception);
                 }
             }
         }
         if (serverTable.isFocused()) {
-            if (serverTable.getSelectionModel().getSelectedItem().getType() == FileType.FILE) {
-                Optional<String> result = WindowService.dialogOption("Rename file", "Enter a new name for the file");
-                if (result.isPresent()) {
-                    try {
-                        networkReaderWriter.writeToNetwork(network.getOutputStream(), String.format("/rename\n%s\n%s", getSelectedFileName(), result.get()));
-                    } catch (Exception exception) {
-                        WindowService.createAlert(exception);
-                    }
+            Optional<String> result = WindowService.dialogOption("Rename file", "Enter a new name for the file");
+            if (result.isPresent()) {
+                try {
+                    networkReaderWriter.writeToNetwork(network.getOutputStream(), String.format("/rename\n%s\n%s", getSelectedFileName(), result.get()));
+                } catch (Exception exception) {
+                    WindowService.createAlert(exception);
                 }
             }
         }
